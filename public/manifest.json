@@ -1,0 +1,42 @@
+{
+  "name": "ClimbTrack - Training Analytics",
+  "short_name": "ClimbTrack",
+  "description": "Progressive Web App for bouldering training management and progress analytics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#f97316",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "fitness", "health"],
+  "shortcuts": [
+    {
+      "name": "Start Bouldering Session",
+      "short_name": "Boulder",
+      "description": "Start a new ON-WALL bouldering session",
+      "url": "/session/new?type=on_wall",
+      "icons": [{ "src": "/icon-boulder.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Start Strength Session",
+      "short_name": "Strength",
+      "description": "Start a new OFF-WALL strength session",
+      "url": "/session/new?type=off_wall",
+      "icons": [{ "src": "/icon-strength.png", "sizes": "96x96" }]
+    }
+  ]
+}
