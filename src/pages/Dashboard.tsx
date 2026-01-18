@@ -29,7 +29,7 @@ export default function Dashboard() {
               <Mountain className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-lg">ClimbTrack</h1>
+              <h1 className="font-bold text-lg">BoulderLog</h1>
               <p className="text-xs text-muted-foreground">Training Analytics</p>
             </div>
           </div>

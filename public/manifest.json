@@ -1,6 +1,6 @@
 {
-  "name": "ClimbTrack - Training Analytics",
-  "short_name": "ClimbTrack",
+  "name": "BoulderLog - Training Analytics",
+  "short_name": "BoulderLog",
   "description": "Progressive Web App for bouldering training management and progress analytics",
   "start_url": "/",
   "display": "standalone",
