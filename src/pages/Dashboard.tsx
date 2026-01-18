@@ -1,23 +1,116 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mountain, Dumbbell, BarChart3, MapPin, Calendar, LogOut, Plus, TrendingUp } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dumbbell, BarChart3, MapPin, Calendar, LogOut, Plus, TrendingUp, Loader2, History, Settings, User, Mountain } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { startOfWeek, format } from 'date-fns';
+import { getMaxGrade } from '@/lib/analytics';
+import { PendingSyncCard } from '@/components/PendingSyncCard';
+import logo from '@/assets/logo-transparent.png';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+
+  // Fetch this week's ON-WALL sessions
+  const { data: onWallSessions, isLoading: onWallLoading } = useQuery({
+    queryKey: ['dashboard_on_wall', user?.id, format(weekStart, 'yyyy-MM-dd')],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sessions')
+        .select('*, boulder_logs(*), session_gyms(gym_id)')
+        .eq('user_id', user!.id)
+        .eq('session_type', 'on_wall')
+        .gte('date_start', weekStart.toISOString());
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch this week's OFF-WALL sessions
+  const { data: offWallSessions, isLoading: offWallLoading } = useQuery({
+    queryKey: ['dashboard_off_wall', user?.id, format(weekStart, 'yyyy-MM-dd')],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('user_id', user!.id)
+        .eq('session_type', 'off_wall')
+        .gte('date_start', weekStart.toISOString());
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch grade mappings for max grade calculation
+  const { data: gradeMappings } = useQuery({
+    queryKey: ['dashboard_mappings', user?.id],
+    queryFn: async () => {
+      const { data: gyms } = await supabase
+        .from('gyms')
+        .select('id')
+        .eq('user_id', user!.id);
+      
+      if (!gyms?.length) return [];
+      
+      const { data } = await supabase
+        .from('gym_grade_mappings')
+        .select('*')
+        .in('gym_id', gyms.map(g => g.id));
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch user profile
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Calculate stats
+  const totalSessions = (onWallSessions?.length || 0) + (offWallSessions?.length || 0);
+  const totalBoulders = onWallSessions?.reduce((sum, s) => 
+    sum + (s.boulder_logs?.reduce((bSum, l) => bSum + l.count, 0) || 0), 0
+  ) || 0;
+
+  // Get max grade this week
+  const allLogs = onWallSessions?.flatMap(s => s.boulder_logs || []) || [];
+  const maxGrade = gradeMappings?.length 
+    ? getMaxGrade(allLogs.map(l => ({ grade_raw: l.grade_raw, count: l.count })), gradeMappings)
+    : null;
+
+  const isLoading = onWallLoading || offWallLoading;
 
   const quickActions = [
-    { icon: Mountain, label: 'Bouldering Session', href: '/session/new?type=on_wall', color: 'bg-session-on-wall' },
-    { icon: Dumbbell, label: 'Strength Session', href: '/session/new?type=off_wall', color: 'bg-session-off-wall' },
+    { icon: Mountain, label: t('dashboard.boulderingSession'), href: '/session/new?type=on_wall', color: 'bg-session-on-wall' },
+    { icon: Dumbbell, label: t('dashboard.strengthSession'), href: '/session/new?type=off_wall', color: 'bg-session-off-wall' },
   ];
 
   const navItems = [
-    { icon: BarChart3, label: 'Progress & Analytics', href: '/analytics', description: 'View your development zones and trends' },
-    { icon: MapPin, label: 'Gym Management', href: '/gyms', description: 'Manage gyms and grading systems' },
-    { icon: Calendar, label: 'Weekly Plan', href: '/plan', description: 'Plan your training week' },
-    { icon: Dumbbell, label: 'Exercise Library', href: '/exercises', description: 'Browse OFF-WALL exercises' },
+    { icon: History, label: t('dashboard.sessionHistory'), href: '/history', description: t('dashboard.sessionHistoryDesc') },
+    { icon: BarChart3, label: t('dashboard.progressAnalytics'), href: '/analytics', description: t('dashboard.progressAnalyticsDesc') },
+    { icon: MapPin, label: t('dashboard.gymManagement'), href: '/gyms', description: t('dashboard.gymManagementDesc') },
+    { icon: Calendar, label: t('dashboard.weeklyPlan'), href: '/plan', description: t('dashboard.weeklyPlanDesc') },
+    { icon: Dumbbell, label: t('dashboard.exerciseLibrary'), href: '/exercises', description: t('dashboard.exerciseLibraryDesc') },
   ];
+
+  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Climber';
 
   return (
     <div className="min-h-screen bg-background safe-area-top safe-area-bottom">
@@ -25,17 +118,30 @@ export default function Dashboard() {
       <header className="sticky top-0 z-40 glass border-b border-border/50">
         <div className="container flex items-center justify-between h-16 px-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <Mountain className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img src={logo} alt="BoulderLog" className="w-12 h-12 object-contain" />
             <div>
               <h1 className="font-bold text-lg">BoulderLog</h1>
-              <p className="text-xs text-muted-foreground">Training Analytics</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.trainingAnalytics')}</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={signOut}>
-            <LogOut className="h-5 w-5" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <User className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                {t('settings.title')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                {t('auth.signOut')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -43,14 +149,16 @@ export default function Dashboard() {
         {/* Welcome */}
         <section className="animate-slide-up">
           <h2 className="text-2xl font-bold mb-1">
-            Welcome back
+            {t('dashboard.welcomeBack', { name: displayName })}
           </h2>
-          <p className="text-muted-foreground">{user?.email}</p>
+          <p className="text-muted-foreground text-sm">
+            {t('dashboard.weekOf', { date: format(weekStart, 'MMM d') })}
+          </p>
         </section>
 
         {/* Quick Actions */}
         <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <h3 className="text-sm font-medium text-muted-foreground mb-3">Quick Start</h3>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('dashboard.quickStart')}</h3>
           <div className="grid grid-cols-2 gap-3">
             {quickActions.map((action) => (
               <Link key={action.label} to={action.href}>
@@ -67,37 +175,78 @@ export default function Dashboard() {
           </div>
         </section>
 
+        {/* Pending Sync */}
+        <section className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
+          <PendingSyncCard />
+        </section>
+
         {/* Stats Preview */}
         <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <Card className="glass overflow-hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-primary" />
-                This Week
+                {t('dashboard.thisWeek')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-primary">0</p>
-                  <p className="text-xs text-muted-foreground">Sessions</p>
+              {isLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-zone-growth">0</p>
-                  <p className="text-xs text-muted-foreground">Boulders</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-primary">{totalSessions}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.sessions')}</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-zone-growth">{totalBoulders}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.boulders')}</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-accent">{maxGrade || '--'}</p>
+                    <p className="text-xs text-muted-foreground">{t('analytics.max')}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-accent">--</p>
-                  <p className="text-xs text-muted-foreground">Max Grade</p>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </section>
 
+        {/* Recent Activity Quick View */}
+        {onWallSessions && onWallSessions.length > 0 && (
+          <section className="animate-slide-up" style={{ animationDelay: '0.25s' }}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-muted-foreground">{t('dashboard.recentSessions')}</h3>
+              <Link to="/history" className="text-xs text-primary hover:underline">{t('dashboard.viewAll')}</Link>
+            </div>
+            <div className="space-y-2">
+              {onWallSessions.slice(0, 2).map((session) => {
+                const boulders = session.boulder_logs?.reduce((sum, l) => sum + l.count, 0) || 0;
+                return (
+                  <Card key={session.id} className="glass">
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-session-on-wall/20 flex items-center justify-center">
+                        <Mountain className="h-5 w-5 text-session-on-wall" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{t('dashboard.boulderingSession')}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(session.date_start), 'EEE, MMM d')} • {boulders} {t('dashboard.boulders').toLowerCase()}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* Navigation */}
         <section className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
-          <h3 className="text-sm font-medium text-muted-foreground mb-3">Explore</h3>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('dashboard.explore')}</h3>
           <div className="space-y-2">
             {navItems.map((item) => (
               <Link key={item.label} to={item.href}>
