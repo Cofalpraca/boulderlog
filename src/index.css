@@ -1,0 +1,348 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==============================================
+   CLIMBTRACK PWA - DESIGN SYSTEM
+   Academic Engineering Thesis Project
+   Theme: Dark, Athletic, Professional
+   ============================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    /* Core Brand Colors - Dark Athletic Theme */
+    --background: 220 20% 6%;
+    --foreground: 210 20% 95%;
+
+    --card: 220 18% 9%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 220 18% 9%;
+    --popover-foreground: 210 20% 95%;
+
+    /* Primary - Vibrant Orange (Energy/Athleticism) */
+    --primary: 24 95% 53%;
+    --primary-foreground: 220 20% 6%;
+
+    /* Secondary - Deep Slate */
+    --secondary: 220 14% 15%;
+    --secondary-foreground: 210 20% 90%;
+
+    --muted: 220 14% 12%;
+    --muted-foreground: 215 14% 55%;
+
+    /* Accent - Electric Teal */
+    --accent: 174 72% 46%;
+    --accent-foreground: 220 20% 6%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 14% 18%;
+    --input: 220 14% 15%;
+    --ring: 24 95% 53%;
+
+    --radius: 0.75rem;
+
+    /* Zone Colors for Development Zones */
+    --zone-comfort: 142 76% 46%;
+    --zone-growth: 47 95% 53%;
+    --zone-limit: 0 84% 60%;
+
+    /* Session Type Colors */
+    --on-wall: 24 95% 53%;
+    --off-wall: 174 72% 46%;
+
+    /* Grade Colors */
+    --grade-easy: 142 76% 46%;
+    --grade-medium: 47 95% 53%;
+    --grade-hard: 24 95% 53%;
+    --grade-extreme: 0 84% 60%;
+
+    /* Chart Colors */
+    --chart-1: 24 95% 53%;
+    --chart-2: 174 72% 46%;
+    --chart-3: 142 76% 46%;
+    --chart-4: 47 95% 53%;
+    --chart-5: 262 83% 58%;
+
+    /* Sidebar */
+    --sidebar-background: 220 18% 7%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 24 95% 53%;
+    --sidebar-primary-foreground: 220 20% 6%;
+    --sidebar-accent: 220 14% 12%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 220 14% 15%;
+    --sidebar-ring: 24 95% 53%;
+
+    /* Typography */
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(24 95% 53%), hsl(35 95% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(174 72% 46%), hsl(160 60% 50%));
+    --gradient-dark: linear-gradient(180deg, hsl(220 20% 8%), hsl(220 20% 4%));
+    --gradient-card: linear-gradient(145deg, hsl(220 18% 11%), hsl(220 18% 7%));
+
+    /* Shadows */
+    --shadow-glow-primary: 0 0 40px -10px hsl(24 95% 53% / 0.4);
+    --shadow-glow-accent: 0 0 40px -10px hsl(174 72% 46% / 0.4);
+    --shadow-elevation-1: 0 2px 8px -2px hsl(0 0% 0% / 0.5);
+    --shadow-elevation-2: 0 8px 24px -4px hsl(0 0% 0% / 0.6);
+    --shadow-elevation-3: 0 16px 48px -8px hsl(0 0% 0% / 0.7);
+  }
+
+  .dark {
+    /* Dark mode is default, same as root */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-display);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50 transition-colors;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-primary/30 text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Gradients */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+
+  .gradient-dark {
+    background: var(--gradient-dark);
+  }
+
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: var(--shadow-glow-primary);
+  }
+
+  .glow-accent {
+    box-shadow: var(--shadow-glow-accent);
+  }
+
+  /* Text gradients */
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent;
+    background: var(--gradient-primary);
+  }
+
+  .text-gradient-accent {
+    @apply bg-clip-text text-transparent;
+    background: var(--gradient-accent);
+  }
+
+  /* Glass morphism */
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl border border-border/50;
+  }
+
+  .glass-strong {
+    @apply bg-card/80 backdrop-blur-2xl border border-border/60;
+  }
+
+  /* Zone colors */
+  .bg-zone-comfort {
+    background-color: hsl(var(--zone-comfort));
+  }
+
+  .bg-zone-growth {
+    background-color: hsl(var(--zone-growth));
+  }
+
+  .bg-zone-limit {
+    background-color: hsl(var(--zone-limit));
+  }
+
+  .text-zone-comfort {
+    color: hsl(var(--zone-comfort));
+  }
+
+  .text-zone-growth {
+    color: hsl(var(--zone-growth));
+  }
+
+  .text-zone-limit {
+    color: hsl(var(--zone-limit));
+  }
+
+  /* Session types */
+  .bg-on-wall {
+    background-color: hsl(var(--on-wall));
+  }
+
+  .bg-off-wall {
+    background-color: hsl(var(--off-wall));
+  }
+
+  .text-on-wall {
+    color: hsl(var(--on-wall));
+  }
+
+  .text-off-wall {
+    color: hsl(var(--off-wall));
+  }
+
+  /* Mono font */
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  /* Animations */
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  .animate-counter {
+    animation: counterPop 0.15s ease-out;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px -10px hsl(24 95% 53% / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 30px -5px hsl(24 95% 53% / 0.6);
+  }
+}
+
+@keyframes counterPop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* PWA Safe Areas */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Touch optimizations for mobile */
+@media (pointer: coarse) {
+  button, a, input, select, textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Prevent pull-to-refresh on PWA */
+html {
+  overscroll-behavior-y: contain;
+}
