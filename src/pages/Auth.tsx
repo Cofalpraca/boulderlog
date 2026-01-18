@@ -48,7 +48,7 @@ export default function Auth() {
           <div className="mx-auto w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center glow-primary">
             <Mountain className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold">ClimbTrack</CardTitle>
+          <CardTitle className="text-2xl font-bold">BoulderLog</CardTitle>
           <CardDescription>
             {isLogin ? 'Sign in to track your progress' : 'Create your training account'}
           </CardDescription>

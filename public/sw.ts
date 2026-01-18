@@ -1,7 +1,7 @@
-// Service Worker for ClimbTrack PWA
+// Service Worker for BoulderLog PWA
 // Provides offline caching and sync capabilities
 
-const CACHE_NAME = 'climbtrack-v1';
+const CACHE_NAME = 'BoulderLog-v1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
