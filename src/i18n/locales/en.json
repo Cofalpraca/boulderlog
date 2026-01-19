@@ -243,7 +243,15 @@
     "betaObservations": "Beta, observations...",
     "cannotEndEmpty": "Cannot end empty session",
     "addAtLeastOneBoulder": "Add at least one boulder before ending the session.",
-    "addAtLeastOneExercise": "Add at least one exercise with completed sets."
+    "addAtLeastOneExercise": "Add at least one exercise with completed sets.",
+    "activeSessionFound": "Active Session Found",
+    "activeSessionDesc": "You have an unfinished training session. Would you like to continue where you left off?",
+    "continueSession": "Continue Session",
+    "discardSession": "Discard",
+    "leaveSessionTitle": "Leave Training Session?",
+    "leaveSessionDesc": "You have unsaved progress. If you leave now, your session data may be lost.",
+    "keepTraining": "Keep Training",
+    "discardAndLeave": "Discard & Leave"
   },
   "settings": {
     "title": "Settings",
