@@ -48,6 +48,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [resetEmailSending, setResetEmailSending] = useState(false);
 
   if (loading) {
     return (
@@ -80,6 +81,25 @@ export default function Auth() {
       });
     }
     setSubmitting(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({ title: t('common.error'), description: t('auth.email'), variant: 'destructive' });
+      return;
+    }
+    
+    setResetEmailSending(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset`
+    });
+    
+    if (error) {
+      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: t('auth.emailSent'), description: t('auth.checkInbox') });
+    }
+    setResetEmailSending(false);
   };
 
   return (
