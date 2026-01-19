@@ -37,6 +37,16 @@ interface LocalGradeMapping {
   approx_v_max: string;
 }
 
+// Default numeric mappings for numeric grading type
+const DEFAULT_NUMERIC: LocalGradeMapping[] = Array.from({ length: 9 }, (_, i) => ({
+  label: String(i + 1),
+  color_hex: '#6B7280', // Neutral gray
+  approx_v_min: V_GRADES[Math.min(i * 2, V_GRADES.length - 1)],
+  approx_v_max: V_GRADES[Math.min(i * 2 + 1, V_GRADES.length - 1)],
+  approx_font_min: FONT_GRADES[Math.min(i * 2, FONT_GRADES.length - 1)],
+  approx_font_max: FONT_GRADES[Math.min(i * 2 + 1, FONT_GRADES.length - 1)],
+}));
+
 export default function Onboarding() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -52,12 +62,13 @@ export default function Onboarding() {
   const [preferredGradeSystem, setPreferredGradeSystem] = useState<GradingType | ''>('');
   const [preferredGrade, setPreferredGrade] = useState('');
   
-  // Step 2: Gym
+  // Step 2: Gym - track created gym ID to avoid duplicates
   const [gymName, setGymName] = useState('');
   const [gymCity, setGymCity] = useState('');
   const [gradingType, setGradingType] = useState<GradingType>('colors');
+  const [createdGymId, setCreatedGymId] = useState<string | null>(null);
   
-  // Step 3: Grade mappings
+  // Step 3: Grade mappings - initialized based on grading type
   const [gradeMappings, setGradeMappings] = useState<LocalGradeMapping[]>(DEFAULT_COLORS);
 
   const GRADE_SYSTEMS: { value: GradingType; label: string }[] = [
@@ -83,6 +94,8 @@ export default function Onboarding() {
   };
 
   const formatPreferredGrade = (): string | null => {
+    // Only return a value if BOTH system and grade are selected
+    // This makes preferred_grade truly optional
     if (!preferredGradeSystem || !preferredGrade) return null;
     return `${preferredGradeSystem}:${preferredGrade}`;
   };
@@ -91,16 +104,33 @@ export default function Onboarding() {
     if (!user || !displayName) return;
     setSubmitting(true);
     
+    // Build update object - only include preferred_grade if it has a value
+    const updateData: { display_name: string; preferred_grade?: string | null } = {
+      display_name: displayName,
+    };
+    
+    const formattedGrade = formatPreferredGrade();
+    // Only set preferred_grade if user actually selected one
+    // Setting null explicitly clears any previous value
+    if (formattedGrade) {
+      updateData.preferred_grade = formattedGrade;
+    }
+    // If not set, we simply don't update preferred_grade field
+    // This prevents any validation issues with the field
+    
     const { error } = await supabase
       .from('profiles')
-      .update({ 
-        display_name: displayName, 
-        preferred_grade: formatPreferredGrade()
-      })
+      .update(updateData)
       .eq('id', user.id);
     
     if (error) {
-      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
+      // Show user-friendly error
+      toast({ 
+        title: t('common.error'), 
+        description: t('onboarding.profileSaveError'),
+        variant: 'destructive' 
+      });
+      console.error('Profile update error:', error);
     } else {
       setStep(2);
     }
@@ -111,28 +141,55 @@ export default function Onboarding() {
     if (!user || !gymName) return;
     setSubmitting(true);
     
-    const { data, error } = await supabase
-      .from('gyms')
-      .insert({ 
-        user_id: user.id, 
-        name: gymName, 
-        city: gymCity || null, 
-        grading_type: gradingType 
-      })
-      .select('id')
-      .single();
+    let gymId = createdGymId;
     
-    if (error) {
-      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
-      setSubmitting(false);
-      return;
+    // If gym already created (user went back), update it instead
+    if (gymId) {
+      const { error } = await supabase
+        .from('gyms')
+        .update({ 
+          name: gymName, 
+          city: gymCity || null, 
+          grading_type: gradingType 
+        })
+        .eq('id', gymId);
+      
+      if (error) {
+        toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
+        setSubmitting(false);
+        return;
+      }
+      
+      // Delete old mappings if grading type changed
+      await supabase.from('gym_grade_mappings').delete().eq('gym_id', gymId);
+    } else {
+      // Create new gym
+      const { data, error } = await supabase
+        .from('gyms')
+        .insert({ 
+          user_id: user.id, 
+          name: gymName, 
+          city: gymCity || null, 
+          grading_type: gradingType 
+        })
+        .select('id')
+        .single();
+      
+      if (error || !data) {
+        toast({ title: t('common.error'), description: error?.message || 'Failed to create gym', variant: 'destructive' });
+        setSubmitting(false);
+        return;
+      }
+      
+      gymId = data.id;
+      setCreatedGymId(gymId);
     }
     
-    // For Font/V-scale, auto-create mappings
+    // For Font/V-scale, auto-create mappings and finish
     if (gradingType === 'font' || gradingType === 'v_scale') {
       const grades = gradingType === 'font' ? FONT_GRADES : V_GRADES;
       const mappings = grades.map((g, i) => ({
-        gym_id: data.id,
+        gym_id: gymId!,
         label: g,
         order_index: i,
         approx_font_min: gradingType === 'font' ? g : null,
@@ -144,33 +201,26 @@ export default function Onboarding() {
       await supabase.from('gym_grade_mappings').insert(mappings);
       await finishOnboarding();
     } else {
-      // For colors/numeric, proceed to step 3
+      // For colors/numeric, set appropriate default mappings and proceed to step 3
+      if (gradingType === 'numeric') {
+        setGradeMappings(DEFAULT_NUMERIC);
+      } else {
+        setGradeMappings(DEFAULT_COLORS);
+      }
       setStep(3);
     }
     setSubmitting(false);
   };
 
   const handleMappingsSubmit = async () => {
-    if (!user) return;
+    if (!user || !createdGymId) return;
     setSubmitting(true);
     
-    // Get the gym we just created
-    const { data: gyms } = await supabase
-      .from('gyms')
-      .select('id')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1);
+    // Delete any existing mappings first (in case user went back)
+    await supabase.from('gym_grade_mappings').delete().eq('gym_id', createdGymId);
     
-    if (!gyms?.length) {
-      toast({ title: t('common.error'), description: 'Gym not found', variant: 'destructive' });
-      setSubmitting(false);
-      return;
-    }
-    
-    const gymId = gyms[0].id;
     const mappings = gradeMappings.map((m, i) => ({
-      gym_id: gymId,
+      gym_id: createdGymId,
       label: m.label,
       order_index: i,
       color_hex: m.color_hex,
@@ -205,8 +255,14 @@ export default function Onboarding() {
   };
 
   const addMapping = () => {
+    // Branch label by grading type
+    const isNumeric = gradingType === 'numeric';
+    const newLabel = isNumeric 
+      ? String(gradeMappings.length + 1)  // Numeric: next number
+      : 'New color';                       // Colors: placeholder color name
+    
     setGradeMappings(prev => [...prev, {
-      label: `Level ${prev.length + 1}`,
+      label: newLabel,
       color_hex: '#9CA3AF',
       approx_font_min: '6a',
       approx_font_max: '6b',

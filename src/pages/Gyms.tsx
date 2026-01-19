@@ -283,6 +283,9 @@ function GymForm({ onSuccess, gym }: { onSuccess: () => void; gym?: Gym }) {
   );
 }
 
+const FONT_GRADES = ['4', '4+', '5', '5+', '6a', '6a+', '6b', '6b+', '6c', '6c+', '7a', '7a+', '7b', '7b+', '7c', '7c+', '8a', '8a+', '8b'];
+const V_GRADES = ['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10', 'V11', 'V12', 'V13', 'V14'];
+
 function getDefaultMappings(gradingType: GradingType, gymId: string) {
   if (gradingType === 'font') {
     return ['4', '4+', '5', '5+', '6a', '6a+', '6b', '6b+', '6c', '6c+', '7a', '7a+', '7b', '7b+', '7c', '7c+', '8a'].map((g, i) => ({
@@ -298,7 +301,20 @@ function getDefaultMappings(gradingType: GradingType, gymId: string) {
       approx_font_min: null, approx_font_max: null,
     }));
   }
-  // Default colors
+  // Numeric grading: 1-9 with neutral gray color
+  if (gradingType === 'numeric') {
+    return Array.from({ length: 9 }, (_, i) => ({
+      gym_id: gymId, 
+      label: String(i + 1), 
+      order_index: i,
+      color_hex: '#6B7280', // Neutral gray
+      approx_v_min: V_GRADES[Math.min(i * 2, V_GRADES.length - 1)],
+      approx_v_max: V_GRADES[Math.min(i * 2 + 1, V_GRADES.length - 1)],
+      approx_font_min: FONT_GRADES[Math.min(i * 2, FONT_GRADES.length - 1)],
+      approx_font_max: FONT_GRADES[Math.min(i * 2 + 1, FONT_GRADES.length - 1)],
+    }));
+  }
+  // Default: color mappings
   return [
     { gym_id: gymId, label: 'Yellow', order_index: 0, color_hex: '#FACC15', approx_v_min: 'V0', approx_v_max: 'V1', approx_font_min: '4', approx_font_max: '5' },
     { gym_id: gymId, label: 'Green', order_index: 1, color_hex: '#22C55E', approx_v_min: 'V2', approx_v_max: 'V3', approx_font_min: '5+', approx_font_max: '6a+' },

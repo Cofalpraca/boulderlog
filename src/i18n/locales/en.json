@@ -46,24 +46,54 @@
     "signUp": "Create Account",
     "signOut": "Sign Out",
     "email": "Email",
+    "emailPlaceholder": "Enter your email address",
     "password": "Password",
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account? Sign up",
     "hasAccount": "Already have an account? Sign in",
     "signInToTrack": "Sign in to track your progress",
     "createAccount": "Create your training account",
-    "emailSent": "Email Sent",
+    "emailSent": "Check Your Email",
     "checkInbox": "Check your inbox for the password reset link.",
+    "checkInboxDesc": "We've sent you a link to reset your password. Click the link in the email to continue.",
+    "emailSentTo": "Email sent to {{email}}",
+    "checkSpam": "Don't see the email? Check your spam folder.",
+    "backToLogin": "Back to login",
     "accountCreated": "Account created! You can now log in.",
     "resetPassword": "Reset Password",
+    "resetPasswordDesc": "Enter your email and we'll send you a link to reset your password.",
     "newPassword": "New Password",
     "confirmPassword": "Confirm Password",
     "updatePassword": "Update Password",
-    "sendResetEmail": "Send Password Reset Email",
+    "sendResetEmail": "Send Reset Link",
     "passwordUpdated": "Password updated successfully.",
     "passwordsNoMatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 6 characters",
-    "sending": "Sending..."
+    "sending": "Sending...",
+    "errors": {
+      "title": "Unable to sign in",
+      "invalidCredentials": "The email or password you entered is incorrect. Please try again.",
+      "emailNotConfirmed": "Please check your email and confirm your account before signing in.",
+      "emailTaken": "An account with this email already exists. Try signing in instead.",
+      "invalidEmail": "Please enter a valid email address.",
+      "weakPassword": "Password is too weak. Use at least 6 characters with a mix of letters and numbers.",
+      "tooManyAttempts": "Too many login attempts. Please wait a few minutes and try again.",
+      "networkError": "Unable to connect. Please check your internet connection.",
+      "generic": "Something went wrong. Please try again.",
+      "resetFailed": "Unable to send reset email",
+      "tryAgainLater": "Please check your email address and try again."
+    },
+    "reset": {
+      "linkExpired": "This reset link has expired or is invalid. Please request a new one.",
+      "noSession": "No valid reset session found. Please request a new password reset link.",
+      "success": "Password Updated",
+      "successDesc": "Your password has been successfully changed.",
+      "enterNew": "Enter your new password below.",
+      "invalidLink": "Reset link is invalid",
+      "redirecting": "Redirecting to dashboard...",
+      "newPasswordPlaceholder": "Enter your new password",
+      "confirmPlaceholder": "Confirm your new password"
+    }
   },
   "dashboard": {
     "welcomeBack": "Welcome back, {{name}}",
@@ -210,7 +240,10 @@
     "boulders": "boulders",
     "boulder": "boulder",
     "tags": "Tags",
-    "betaObservations": "Beta, observations..."
+    "betaObservations": "Beta, observations...",
+    "cannotEndEmpty": "Cannot end empty session",
+    "addAtLeastOneBoulder": "Add at least one boulder before ending the session.",
+    "addAtLeastOneExercise": "Add at least one exercise with completed sets."
   },
   "settings": {
     "title": "Settings",
@@ -263,7 +296,9 @@
     "fontRange": "Font Range",
     "onboardingComplete": "Onboarding complete. Start tracking!",
     "color": "color",
-    "level": "level"
+    "level": "level",
+    "profileSaveError": "Unable to save profile. Please try again.",
+    "enterGradeLabel": "Enter your preferred grade label (e.g., Blue)"
   },
   "gyms": {
     "title": "Gym Management",

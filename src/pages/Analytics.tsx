@@ -20,6 +20,7 @@ import {
 import { format, subDays, startOfWeek } from 'date-fns';
 import { pl, enUS } from 'date-fns/locale';
 import { getMappingDifficulty, getMaxGrade, computeGymDifficultyProfile, computeSessionZones } from '@/lib/analytics';
+import { aggregateVolumeByGrade } from '@/lib/volumeByGrade';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -108,15 +109,80 @@ export default function Analytics() {
     enabled: !!user,
   });
 
-  // Fetch gym difficulty profiles
-  const { data: difficultyProfiles } = useQuery({
-    queryKey: ['gym_difficulty_profiles', user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from('gym_difficulty_profiles').select('*, gyms(*)').eq('user_id', user!.id);
-      return data || [];
-    },
-    enabled: !!user,
-  });
+  // Compute gym difficulty profiles dynamically from filtered sessions
+  // This ensures ALL gyms with at least 1 boulder in the time range are shown
+  const computedDifficultyProfiles = (() => {
+    if (!onWallSessions?.length || !allGradeMappings?.length || !gyms?.length) return [];
+
+    // Step 1: Group sessions by gym and aggregate difficulty data
+    const gymData = new Map<string, { totalDifficulty: number; sampleCount: number; gymName: string }>();
+
+    for (const session of onWallSessions) {
+      // Get gym for this session
+      const gymId = session.session_gyms?.[0]?.gym_id;
+      if (!gymId || !session.date_end) continue; // Skip sessions without gym or not ended
+
+      const gym = gyms.find(g => g.id === gymId);
+      if (!gym) continue;
+
+      // Get mappings for this gym
+      const mappings = allGradeMappings.filter(m => m.gym_id === gymId);
+      if (!mappings.length) continue;
+
+      // Create mapping difficulty lookup
+      const mappingDifficulty = new Map<string, number>();
+      mappings.forEach(m => {
+        mappingDifficulty.set(m.label, getMappingDifficulty(m));
+      });
+
+      // Aggregate boulder logs for this session
+      for (const log of session.boulder_logs || []) {
+        const difficulty = mappingDifficulty.get(log.grade_raw);
+        if (difficulty !== undefined && log.count > 0) {
+          const existing = gymData.get(gymId) || { totalDifficulty: 0, sampleCount: 0, gymName: gym.name };
+          existing.totalDifficulty += difficulty * log.count;
+          existing.sampleCount += log.count;
+          gymData.set(gymId, existing);
+        }
+      }
+    }
+
+    if (gymData.size === 0) return [];
+
+    // Step 2: Calculate user's baseline (average difficulty across all gyms)
+    let totalAllDifficulty = 0;
+    let totalAllSamples = 0;
+    gymData.forEach(data => {
+      totalAllDifficulty += data.totalDifficulty;
+      totalAllSamples += data.sampleCount;
+    });
+    const userBaseline = totalAllSamples > 0 ? totalAllDifficulty / totalAllSamples : 0;
+
+    // Step 3: Calculate difficulty bias for each gym
+    const profiles: Array<{
+      id: string;
+      gym_id: string;
+      difficulty_bias: number;
+      samples_count: number;
+      gyms: { name: string } | null;
+    }> = [];
+
+    gymData.forEach((data, gymId) => {
+      const avgDifficulty = data.sampleCount > 0 ? data.totalDifficulty / data.sampleCount : 0;
+      const bias = Number((userBaseline - avgDifficulty).toFixed(2));
+
+      profiles.push({
+        id: gymId,
+        gym_id: gymId,
+        difficulty_bias: bias,
+        samples_count: data.sampleCount,
+        gyms: { name: data.gymName },
+      });
+    });
+
+    // Sort by sample count (descending) for better visibility
+    return profiles.sort((a, b) => (b.samples_count || 0) - (a.samples_count || 0));
+  })();
 
   // Recompute zone summaries
   const recomputeZoneSummaries = useMutation({
@@ -180,14 +246,16 @@ export default function Analytics() {
     { name: t('analytics.limit'), value: Math.round(aggregateZones.limit), color: ZONE_COLORS.limit },
   ] : [];
 
-  // Volume by grade with better spacing
-  const volumeByGrade = gradeMappings?.map(m => {
-    const count = filteredOnWallSessions?.reduce((sum, s) => {
-      const log = s.boulder_logs?.find(l => l.grade_raw === m.label);
-      return sum + (log?.count || 0);
-    }, 0) || 0;
-    return { grade: m.label, count, color: m.color_hex || 'hsl(var(--primary))' };
-  }).filter(v => v.count > 0) || [];
+  // Volume by grade - use dedicated aggregation function to prevent duplicates
+  // The aggregateVolumeByGrade function:
+  // 1. AGGREGATES FIRST: Sums counts by grade_raw before any join
+  // 2. JOINS SECOND: Maps to grade mappings for color lookup
+  // 3. DEDUPLICATES: Ensures each grade label appears exactly once
+  const allBoulderLogs = filteredOnWallSessions?.flatMap(s => s.boulder_logs || []) || [];
+  const volumeByGrade = aggregateVolumeByGrade(
+    allBoulderLogs.map(log => ({ grade_raw: log.grade_raw, count: log.count })),
+    gradeMappings || []
+  );
 
   // Weekly trend - scope aware with locale-aware dates
   const weeklyData: { week: string; boulders: number; onWall: number; offWall: number; sets: number }[] = [];
@@ -428,9 +496,9 @@ export default function Analytics() {
                 <CardDescription className="text-xs">{t('analytics.gymDifficultyDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                {difficultyProfiles && difficultyProfiles.length > 0 ? (
+                {computedDifficultyProfiles && computedDifficultyProfiles.length > 0 ? (
                   <>
-                    {difficultyProfiles.map(profile => (
+                    {computedDifficultyProfiles.map(profile => (
                       <div key={profile.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                         <div className="flex-1">
                           <p className="font-medium text-sm">{profile.gyms?.name}</p>

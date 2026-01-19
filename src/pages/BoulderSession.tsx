@@ -266,6 +266,17 @@ export default function BoulderSession() {
 
   const endSession = async () => {
     if (!user || !activeGym || !activeGradeMappings) return;
+    
+    // Validation: require at least one boulder
+    if (totalBoulders === 0) {
+      toast({ 
+        title: t('session.cannotEndEmpty', 'Cannot end empty session'),
+        description: t('session.addAtLeastOneBoulder', 'Add at least one boulder before ending the session.'),
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
     setSaving(true);
 
     // Get all non-deleted boulders
