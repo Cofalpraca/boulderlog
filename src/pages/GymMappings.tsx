@@ -147,8 +147,14 @@ export default function GymMappings() {
   };
 
   const addMapping = () => {
+    // Branch label by grading type
+    const isNumeric = gym?.grading_type === 'numeric';
+    const newLabel = isNumeric 
+      ? String(mappings.length + 1)  // Numeric: next number
+      : 'New color';                  // Colors: placeholder color name
+    
     setMappings(prev => [...prev, {
-      label: `Level ${prev.length + 1}`,
+      label: newLabel,
       color_hex: '#9CA3AF',
       approx_font_min: '6a',
       approx_font_max: '6b',

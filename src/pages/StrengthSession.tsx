@@ -290,6 +290,18 @@ export default function StrengthSession() {
 
   const endSession = async () => {
     if (!user) return;
+    
+    // Validation: require at least one exercise with completed sets
+    const hasCompletedWork = sessionItems.length > 0 && totalSets > 0;
+    if (!hasCompletedWork) {
+      toast({ 
+        title: t('session.cannotEndEmpty', 'Cannot end empty session'),
+        description: t('session.addAtLeastOneExercise', 'Add at least one exercise with completed sets.'),
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
     setSaving(true);
 
     try {

@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,10 +9,41 @@ import { Mail, Lock, Loader2 } from 'lucide-react';
 import logo from '@/assets/logo-transparent.png';
 import { useToast } from '@/hooks/use-toast';
 
+// Helper function to translate Supabase auth errors to friendly messages
+const getAuthErrorMessage = (error: Error, t: (key: string) => string): string => {
+  const message = error.message.toLowerCase();
+  
+  if (message.includes('invalid login credentials') || message.includes('invalid email or password')) {
+    return t('auth.errors.invalidCredentials');
+  }
+  if (message.includes('email not confirmed')) {
+    return t('auth.errors.emailNotConfirmed');
+  }
+  if (message.includes('user already registered') || message.includes('already registered')) {
+    return t('auth.errors.emailTaken');
+  }
+  if (message.includes('invalid email')) {
+    return t('auth.errors.invalidEmail');
+  }
+  if (message.includes('password') && message.includes('weak')) {
+    return t('auth.errors.weakPassword');
+  }
+  if (message.includes('rate limit') || message.includes('too many requests')) {
+    return t('auth.errors.tooManyAttempts');
+  }
+  if (message.includes('network') || message.includes('fetch')) {
+    return t('auth.errors.networkError');
+  }
+  
+  // Fallback to a generic error
+  return t('auth.errors.generic');
+};
+
 export default function Auth() {
   const { user, loading, signIn, signUp } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,9 +69,16 @@ export default function Auth() {
       : await signUp(email, password);
 
     if (error) {
-      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
+      toast({ 
+        title: t('auth.errors.title'), 
+        description: getAuthErrorMessage(error, t), 
+        variant: 'destructive' 
+      });
     } else if (!isLogin) {
-      toast({ title: t('common.success'), description: t('auth.accountCreated') });
+      toast({ 
+        title: t('common.success'), 
+        description: t('auth.accountCreated') 
+      });
     }
     setSubmitting(false);
   };
@@ -109,11 +146,10 @@ export default function Auth() {
             {isLogin && (
               <button
                 type="button"
-                onClick={handleForgotPassword}
-                disabled={resetEmailSending}
+                onClick={() => navigate('/forgot-password')}
                 className="text-sm text-muted-foreground hover:text-primary transition-colors block w-full"
               >
-                {resetEmailSending ? t('auth.sending') : t('auth.forgotPassword')}
+                {t('auth.forgotPassword')}
               </button>
             )}
             <button

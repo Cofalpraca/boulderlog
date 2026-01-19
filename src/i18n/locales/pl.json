@@ -46,24 +46,54 @@
     "signUp": "Utwórz konto",
     "signOut": "Wyloguj się",
     "email": "Email",
+    "emailPlaceholder": "Wprowadź swój adres email",
     "password": "Hasło",
     "forgotPassword": "Zapomniałeś hasła?",
     "noAccount": "Nie masz konta? Zarejestruj się",
     "hasAccount": "Masz już konto? Zaloguj się",
     "signInToTrack": "Zaloguj się, aby śledzić postępy",
     "createAccount": "Utwórz konto treningowe",
-    "emailSent": "Email wysłany",
+    "emailSent": "Sprawdź swoją skrzynkę",
     "checkInbox": "Sprawdź skrzynkę odbiorczą, aby zresetować hasło.",
+    "checkInboxDesc": "Wysłaliśmy Ci link do resetowania hasła. Kliknij link w emailu, aby kontynuować.",
+    "emailSentTo": "Email wysłany na {{email}}",
+    "checkSpam": "Nie widzisz emaila? Sprawdź folder spam.",
+    "backToLogin": "Wróć do logowania",
     "accountCreated": "Konto utworzone! Możesz się teraz zalogować.",
     "resetPassword": "Resetuj hasło",
+    "resetPasswordDesc": "Wprowadź swój email, a wyślemy Ci link do resetowania hasła.",
     "newPassword": "Nowe hasło",
     "confirmPassword": "Potwierdź hasło",
     "updatePassword": "Zaktualizuj hasło",
-    "sendResetEmail": "Wyślij email resetujący hasło",
+    "sendResetEmail": "Wyślij link resetujący",
     "passwordUpdated": "Hasło zostało zaktualizowane.",
     "passwordsNoMatch": "Hasła nie pasują do siebie",
     "passwordTooShort": "Hasło musi mieć co najmniej 6 znaków",
-    "sending": "Wysyłanie..."
+    "sending": "Wysyłanie...",
+    "errors": {
+      "title": "Nie można się zalogować",
+      "invalidCredentials": "Wprowadzony email lub hasło są niepoprawne. Spróbuj ponownie.",
+      "emailNotConfirmed": "Sprawdź swoją skrzynkę i potwierdź konto przed zalogowaniem.",
+      "emailTaken": "Konto z tym adresem email już istnieje. Spróbuj się zalogować.",
+      "invalidEmail": "Wprowadź poprawny adres email.",
+      "weakPassword": "Hasło jest za słabe. Użyj co najmniej 6 znaków z literami i cyframi.",
+      "tooManyAttempts": "Za dużo prób logowania. Poczekaj kilka minut i spróbuj ponownie.",
+      "networkError": "Nie można się połączyć. Sprawdź połączenie internetowe.",
+      "generic": "Coś poszło nie tak. Spróbuj ponownie.",
+      "resetFailed": "Nie można wysłać emaila resetującego",
+      "tryAgainLater": "Sprawdź adres email i spróbuj ponownie."
+    },
+    "reset": {
+      "linkExpired": "Ten link resetujący wygasł lub jest nieprawidłowy. Poproś o nowy.",
+      "noSession": "Nie znaleziono sesji resetowania. Poproś o nowy link do resetowania hasła.",
+      "success": "Hasło zaktualizowane",
+      "successDesc": "Twoje hasło zostało pomyślnie zmienione.",
+      "enterNew": "Wprowadź poniżej swoje nowe hasło.",
+      "invalidLink": "Link resetujący jest nieprawidłowy",
+      "redirecting": "Przekierowywanie do pulpitu...",
+      "newPasswordPlaceholder": "Wprowadź nowe hasło",
+      "confirmPlaceholder": "Potwierdź nowe hasło"
+    }
   },
   "dashboard": {
     "welcomeBack": "Witaj ponownie, {{name}}",
@@ -210,7 +240,10 @@
     "boulders": "boulderów",
     "boulder": "boulder",
     "tags": "Tagi",
-    "betaObservations": "Beta, obserwacje..."
+    "betaObservations": "Beta, obserwacje...",
+    "cannotEndEmpty": "Nie można zakończyć pustej sesji",
+    "addAtLeastOneBoulder": "Dodaj co najmniej jeden boulder przed zakończeniem sesji.",
+    "addAtLeastOneExercise": "Dodaj co najmniej jedno ćwiczenie z ukończonymi seriami."
   },
   "settings": {
     "title": "Ustawienia",
@@ -263,7 +296,9 @@
     "fontRange": "Zakres Font",
     "onboardingComplete": "Onboarding zakończony. Zacznij śledzić!",
     "color": "kolor",
-    "level": "poziom"
+    "level": "poziom",
+    "profileSaveError": "Nie udało się zapisać profilu. Spróbuj ponownie.",
+    "enterGradeLabel": "Wprowadź preferowaną etykietę stopnia (np. Niebieski)"
   },
   "gyms": {
     "title": "Zarządzanie siłowniami",

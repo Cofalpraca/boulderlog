@@ -182,6 +182,11 @@ export default function WeeklyPlan() {
   const startSession = async (planned: PlannedSession) => {
     if (!user) return;
     
+    // Extract gym from notes if present
+    const gymMatch = planned.notes?.match(/^\[Gym: (.+?)\]/);
+    const gymName = gymMatch ? gymMatch[1] : null;
+    const selectedGym = gymName ? gyms?.find(g => g.name === gymName) : null;
+    
     // Create actual session
     const { data: session, error } = await supabase
       .from('sessions')
@@ -195,8 +200,16 @@ export default function WeeklyPlan() {
       .single();
     
     if (error || !session) {
-      toast({ title: t('common.error'), variant: 'destructive' });
+      toast({ title: t('common.error'), description: error?.message || 'Failed to create session', variant: 'destructive' });
       return;
+    }
+    
+    // Link gym if ON-WALL session has a gym
+    if (planned.session_type === 'on_wall' && selectedGym) {
+      await supabase.from('session_gyms').insert({
+        session_id: session.id,
+        gym_id: selectedGym.id,
+      });
     }
     
     // Navigate to appropriate session page

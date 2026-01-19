@@ -385,7 +385,7 @@ export default function SessionHistory() {
           {selectedSession && (
             <>
               <SheetHeader className="pb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3">
                   <SheetTitle className="flex items-center gap-2">
                     {selectedSession.session_type === 'on_wall' ? (
                       <Mountain className="h-5 w-5 text-session-on-wall" />
@@ -432,7 +432,6 @@ export default function SessionHistory() {
                       </AlertDialog>
                     </div>
                   )}
-                  
                   {isEditing && (
                     <div className="flex items-center gap-2">
                       <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>

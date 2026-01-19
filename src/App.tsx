@@ -9,6 +9,7 @@ import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import Dashboard from "@/pages/Dashboard";
 import Auth from "@/pages/Auth";
+import ForgotPassword from "@/pages/ForgotPassword";
 import Onboarding from "@/pages/Onboarding";
 import Gyms from "@/pages/Gyms";
 import GymMappings from "@/pages/GymMappings";
@@ -75,6 +76,7 @@ function AppRoutes() {
       {/* Public routes */}
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/reset" element={<AuthReset />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       
       {/* Onboarding route - accessible only when onboarding incomplete */}
       <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
