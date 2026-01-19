@@ -118,7 +118,29 @@
     "weeklyPlanDesc": "Plan your training week",
     "exerciseLibrary": "Exercise Library",
     "exerciseLibraryDesc": "Browse OFF-WALL exercises",
-    "trainingAnalytics": "Training Analytics"
+    "trainingAnalytics": "Training Analytics",
+    "userLevel": {
+      "title": "Your Level",
+      "basedOnBest": "Best {{top}} from last {{days}} days (min {{min}})",
+      "max": "Max",
+      "noData": "Not enough data",
+      "addBoulders": "Add at least {{count}} boulders to compute your level",
+      "insufficientMapped": "Only {{mapped}} of {{total}} boulders could be mapped (need {{min}})",
+      "noSessions": "No ON-WALL sessions in the last 90 days",
+      "noLogs": "No boulder logs recorded in recent sessions",
+      "setupMappings": "Set up grade mappings to see your level",
+      "configureMappings": "Configure Grade Mappings",
+      "howCalculated": "How it's calculated",
+      "explanation": {
+        "title": "How Your Level is Calculated",
+        "intro": "Your climbing level is computed automatically from your ON-WALL session history.",
+        "algorithm": "Average of your best {{top}} boulders from the last {{days}} days (minimum {{min}} required).",
+        "max": "The highest grade you've sent in the time window.",
+        "normalization": "Grades from different gyms are normalized using V-scale as a common baseline, so you get an accurate level even if you climb at multiple gyms.",
+        "dualFormat": "Your level is always displayed in both V-Scale and Font formats for easy reference.",
+        "samples": "Using {{used}} of {{total}} boulders logged."
+      }
+    }
   },
   "analytics": {
     "title": "Progress & Analytics",
@@ -140,8 +162,8 @@
     "gymDifficultyIndex": "Gym Difficulty Index",
     "gymDifficultyDesc": "How each gym compares to your personal baseline",
     "boulderSamples": "boulder samples",
-    "harderThanAvg": "+ = harder than your average",
-    "easierThanAvg": "- = easier",
+    "harderThanAvg": "Harder for you",
+    "easierThanAvg": "Easier for you",
     "completeSessionsMultipleGyms": "Complete sessions at multiple gyms to see comparisons",
     "gymStatistics": "Gym Statistics",
     "trainingBalance": "ON-WALL vs OFF-WALL Balance",
@@ -179,8 +201,20 @@
       "growth": "Growth: Grades near your limit. The sweet spot for progression and skill building.",
       "limit": "Limit: Grades at or beyond your max. Challenges your physical ceiling.",
       "computed": "Zones are computed from ON-WALL sessions using grade normalization based on your climbing history.",
-      "updated": "Updated after completing ON-WALL sessions."
-    }
+      "updated": "Updated after completing ON-WALL sessions.",
+      "painNote": "Sessions with pain are marked and should be interpreted cautiously."
+    },
+    "painCallout": {
+      "title": "Pain Reported",
+      "message": "Pain was reported during this period. Consider reducing intensity or adding recovery work.",
+      "filterLabel": "Show sessions with pain"
+    },
+    "painInsights": {
+      "painRecentDeload": "Pain reported recently — consider a deload week or reduced intensity.",
+      "painHighIntensity": "Pain reported with high ON-WALL intensity — consider technique focus or volume at lower grades.",
+      "painLowOffWall": "Pain reported with low OFF-WALL work — consider adding a strength/prehab session."
+    },
+    "painMarker": "Pain: Level {{level}}, {{area}}"
   },
   "session": {
     "bouldering": "Bouldering Session",
@@ -203,6 +237,21 @@
     "anyPain": "Any pain or discomfort?",
     "reportPain": "Report Pain",
     "painReported": "Pain Reported",
+    "painLevel": "Pain Level",
+    "painLevelDesc": "1 = minor discomfort, 5 = severe pain",
+    "painArea": "Affected Area",
+    "selectPainArea": "Select area...",
+    "painNote": "Pain Details",
+    "painNotePlaceholder": "Describe the pain, when it started...",
+    "painAreas": {
+      "fingers": "Fingers",
+      "elbow": "Elbow",
+      "shoulder": "Shoulder",
+      "back": "Back",
+      "wrist": "Wrist",
+      "knee": "Knee",
+      "other": "Other"
+    },
     "minutes": "min",
     "offline": "Offline",
     "newSession": "New Session",
@@ -260,14 +309,12 @@
     "appearance": "Appearance",
     "language": "Language",
     "profileInfo": "Profile Information",
-    "profileInfoDesc": "Update your display name and preferred climbing grade.",
+    "profileInfoDesc": "Update your display name.",
     "displayName": "Display Name",
     "displayNamePlaceholder": "Your climbing name",
-    "gradeSystem": "Grade System",
-    "selectGradeSystem": "Select a grading system",
-    "preferredGrade": "Preferred Grade",
-    "selectMaxGrade": "Select your comfortable max grade",
-    "currentMaxGrade": "Your current comfortable max grade",
+    "levelAutoComputed": "Your climbing level is calculated automatically from your logged sessions.",
+    "saveProfile": "Save Profile",
+    "saved": "Saved!",
     "saveProfile": "Save Profile",
     "saved": "Saved!",
     "gymConfiguration": "Gym Configuration",
@@ -306,7 +353,7 @@
     "color": "color",
     "level": "level",
     "profileSaveError": "Unable to save profile. Please try again.",
-    "enterGradeLabel": "Enter your preferred grade label (e.g., Blue)"
+    "levelAutoComputed": "Your climbing level will be calculated automatically from your logged sessions."
   },
   "gyms": {
     "title": "Gym Management",
@@ -325,7 +372,8 @@
     "colorsSystem": "Colors",
     "numericSystem": "Numeric",
     "colorsDesc": "Colors (Yellow, Green, Blue...)",
-    "numericDesc": "Numeric (1, 2, 3...)"
+    "numericDesc": "Numeric (1, 2, 3...)",
+    "gradeSystem": "Grading System"
   },
   "filters": {
     "sessionType": "Session Type",
@@ -446,5 +494,61 @@
     "protocolsExplain": "Protocols define timing and structure for exercises like repeaters, max hangs, etc.",
     "noTimingDefined": "No timing defined",
     "hold": "hold"
+  },
+  "templates": {
+    "title": "Templates",
+    "new": "New",
+    "createTemplate": "Create Template",
+    "templateName": "Template Name",
+    "templateNamePlaceholder": "e.g., Max Hangs Protocol",
+    "type": "Type",
+    "onWall": "ON-WALL (Bouldering)",
+    "offWall": "OFF-WALL (Strength)",
+    "created": "Template created!",
+    "deleted": "Template deleted",
+    "saved": "Template saved!",
+    "noStrengthTemplates": "No strength templates yet",
+    "noBouldersTemplates": "No bouldering templates yet",
+    "createStrengthDesc": "Create templates to quickly add exercises to your sessions",
+    "createBoulderDesc": "Create templates to define session focus and logging preferences",
+    "exercises": "exercises",
+    "exercise": "exercise",
+    "preset": "Preset",
+    "systemPreset": "System Preset",
+    "sessionTemplate": "Session template",
+    "addExercise": "Add Exercise",
+    "addExerciseToTemplate": "Add Exercise to Template",
+    "noExercisesInTemplate": "No exercises in this template",
+    "selectProtocol": "Select Protocol",
+    "skip": "Skip",
+    "addWithProtocol": "Add with Protocol",
+    "noProtocolsAvailable": "No protocols available",
+    "sessionFocus": "Session Focus",
+    "focusDescription": "Description (optional)",
+    "focusDescriptionPlaceholder": "e.g., Focus on power moves this session",
+    "gradeFocus": "Grade Focus",
+    "gradeFocusDesc": "Relative to your preferred grade setting",
+    "wellBelowBaseline": "Well below baseline",
+    "belowBaseline": "Below baseline",
+    "aroundBaseline": "Around baseline",
+    "aboveBaseline": "Above baseline",
+    "wellAboveBaseline": "Well above baseline",
+    "recommendedDuration": "Recommended Duration",
+    "zoneDistribution": "Zone Distribution Guidance",
+    "saveTemplate": "Save Template",
+    "focusTypes": {
+      "project": "Project",
+      "projectDesc": "Hard attempts, beta notes",
+      "volume": "Volume",
+      "volumeDesc": "High mileage, easier grades",
+      "limit": "Limit",
+      "limitDesc": "Maximum difficulty",
+      "technique": "Technique",
+      "techniqueDesc": "Footwork, movement quality",
+      "warmup": "Warm-up",
+      "warmupDesc": "Structured progression",
+      "custom": "Custom",
+      "customDesc": "Define your own"
+    }
   }
 }

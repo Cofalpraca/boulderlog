@@ -1,13 +1,14 @@
 import type { Database } from '@/integrations/supabase/types';
+import { mappingToVScore, DEFAULT_FONT_TO_V } from '@/lib/userLevel';
 
 type GradeMapping = Database['public']['Tables']['gym_grade_mappings']['Row'];
 type BoulderLog = { grade_raw: string; count: number };
 
-// V-Scale grade order for comparison
-const V_SCALE_ORDER = ['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10', 'V11', 'V12', 'V13', 'V14', 'V15', 'V16'];
+// V-Scale grade order for comparison - extended to V17
+const V_SCALE_ORDER = ['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10', 'V11', 'V12', 'V13', 'V14', 'V15', 'V16', 'V17'];
 
-// Font grade order for comparison
-const FONT_ORDER = ['4', '4+', '5', '5+', '6a', '6a+', '6b', '6b+', '6c', '6c+', '7a', '7a+', '7b', '7b+', '7c', '7c+', '8a', '8a+', '8b', '8b+', '8c', '8c+', '9a'];
+// Font grade order for comparison - MUST be in correct difficulty order with + variants
+const FONT_ORDER = ['4', '4+', '5', '5a', '5b', '5+', '5c', '6a', '6a+', '6b', '6b+', '6c', '6c+', '7a', '7a+', '7b', '7b+', '7c', '7c+', '8a', '8a+', '8b', '8b+', '8c', '8c+', '9a'];
 
 /**
  * Get numeric index for V-Scale grade
@@ -183,24 +184,34 @@ export function computeGymDifficultyProfile(
 }
 
 /**
- * Get max grade from logs
+ * Get max grade from logs using the canonical normalization pipeline.
+ * Uses V-score as the common baseline to ensure correct ordering across grading systems.
+ * 
+ * This correctly handles:
+ * - Font grades: 6c+ > 6c (+ variants are harder)
+ * - V-Scale: V7 > V6
+ * - Color/Numeric: Uses mappingToVScore for normalization
  */
 export function getMaxGrade(logs: BoulderLog[], mappings: GradeMapping[]): string | null {
   if (!logs.length || !mappings.length) return null;
   
-  const mappingDifficulty = new Map<string, { difficulty: number; label: string }>();
+  // Build lookup using canonical V-score normalization
+  const mappingScore = new Map<string, { vScore: number; label: string }>();
   mappings.forEach(m => {
-    mappingDifficulty.set(m.label, { difficulty: getMappingDifficulty(m), label: m.label });
+    const vScore = mappingToVScore(m);
+    if (vScore >= 0) {
+      mappingScore.set(m.label, { vScore, label: m.label });
+    }
   });
 
-  let maxDifficulty = -1;
+  let maxScore = -1;
   let maxGrade: string | null = null;
 
   logs.forEach(log => {
     if (log.count > 0) {
-      const data = mappingDifficulty.get(log.grade_raw);
-      if (data && data.difficulty > maxDifficulty) {
-        maxDifficulty = data.difficulty;
+      const data = mappingScore.get(log.grade_raw);
+      if (data && data.vScore > maxScore) {
+        maxScore = data.vScore;
         maxGrade = data.label;
       }
     }

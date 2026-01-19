@@ -118,7 +118,29 @@
     "weeklyPlanDesc": "Zaplanuj tydzień treningowy",
     "exerciseLibrary": "Biblioteka ćwiczeń",
     "exerciseLibraryDesc": "Przeglądaj ćwiczenia OFF-WALL",
-    "trainingAnalytics": "Analityka treningowa"
+    "trainingAnalytics": "Analityka treningowa",
+    "userLevel": {
+      "title": "Twój poziom",
+      "basedOnBest": "Top {{top}} z ostatnich {{days}} dni (min {{min}})",
+      "max": "Maks",
+      "noData": "Za mało danych",
+      "addBoulders": "Dodaj co najmniej {{count}} boulderów, aby obliczyć swój poziom",
+      "insufficientMapped": "Tylko {{mapped}} z {{total}} boulderów można zmapować (potrzeba {{min}})",
+      "noSessions": "Brak sesji NA ŚCIANCE w ostatnich 90 dniach",
+      "noLogs": "Brak zapisanych boulderów w ostatnich sesjach",
+      "setupMappings": "Skonfiguruj mapowania stopni, aby zobaczyć swój poziom",
+      "configureMappings": "Konfiguruj mapowania stopni",
+      "howCalculated": "Jak to działa",
+      "explanation": {
+        "title": "Jak obliczany jest Twój poziom",
+        "intro": "Twój poziom wspinaczkowy jest obliczany automatycznie z historii sesji NA ŚCIANCE.",
+        "algorithm": "Średnia z Twoich najlepszych {{top}} boulderów z ostatnich {{days}} dni (wymagane minimum {{min}}).",
+        "max": "Najwyższy stopień pokonany w tym oknie czasowym.",
+        "normalization": "Stopnie z różnych siłowni są normalizowane przy użyciu V-scale jako wspólnej bazy, więc otrzymujesz dokładny poziom nawet jeśli wspinasz się w wielu siłowniach.",
+        "dualFormat": "Twój poziom jest zawsze wyświetlany w obu formatach V-Scale i Font dla łatwego odniesienia.",
+        "samples": "Używane {{used}} z {{total}} zalogowanych boulderów."
+      }
+    }
   },
   "analytics": {
     "title": "Postępy i analityka",
@@ -140,8 +162,8 @@
     "gymDifficultyIndex": "Indeks trudności siłowni",
     "gymDifficultyDesc": "Porównanie każdej siłowni z Twoim poziomem bazowym",
     "boulderSamples": "próbek boulderów",
-    "harderThanAvg": "+ = trudniejsza niż średnia",
-    "easierThanAvg": "- = łatwiejsza",
+    "harderThanAvg": "Trudniejsza dla Ciebie",
+    "easierThanAvg": "Łatwiejsza dla Ciebie",
     "completeSessionsMultipleGyms": "Ukończ sesje w wielu siłowniach, aby zobaczyć porównania",
     "gymStatistics": "Statystyki siłowni",
     "trainingBalance": "Równowaga NA ŚCIANCE vs POZA ŚCIANKĄ",
@@ -179,8 +201,20 @@
       "growth": "Wzrost: Stopnie blisko limitu. Idealne do progresu i rozwijania umiejętności.",
       "limit": "Limit: Stopnie na lub powyżej maksimum. Wyzwanie dla fizycznego sufitu.",
       "computed": "Strefy są obliczane z sesji NA ŚCIANCE przy użyciu normalizacji stopni na podstawie historii wspinaczki.",
-      "updated": "Aktualizowane po ukończeniu sesji NA ŚCIANCE."
-    }
+      "updated": "Aktualizowane po ukończeniu sesji NA ŚCIANCE.",
+      "painNote": "Sesje z bólem są oznaczone i należy je interpretować ostrożnie."
+    },
+    "painCallout": {
+      "title": "Zgłoszono ból",
+      "message": "W tym okresie zgłoszono ból. Rozważ zmniejszenie intensywności lub dodanie pracy regeneracyjnej.",
+      "filterLabel": "Pokaż sesje z bólem"
+    },
+    "painInsights": {
+      "painRecentDeload": "Ostatnio zgłoszono ból — rozważ tydzień regeneracyjny lub zmniejszoną intensywność.",
+      "painHighIntensity": "Zgłoszono ból przy wysokiej intensywności NA ŚCIANCE — rozważ skupienie na technice lub objętość na niższych stopniach.",
+      "painLowOffWall": "Zgłoszono ból przy niskiej aktywności POZA ŚCIANKĄ — rozważ dodanie sesji siłowej/prehab."
+    },
+    "painMarker": "Ból: Poziom {{level}}, {{area}}"
   },
   "session": {
     "bouldering": "Sesja boulderowa",
@@ -203,6 +237,21 @@
     "anyPain": "Jakikolwiek ból lub dyskomfort?",
     "reportPain": "Zgłoś ból",
     "painReported": "Ból zgłoszony",
+    "painLevel": "Poziom bólu",
+    "painLevelDesc": "1 = lekki dyskomfort, 5 = silny ból",
+    "painArea": "Dotknięty obszar",
+    "selectPainArea": "Wybierz obszar...",
+    "painNote": "Opis bólu",
+    "painNotePlaceholder": "Opisz ból, kiedy się zaczął...",
+    "painAreas": {
+      "fingers": "Palce",
+      "elbow": "Łokieć",
+      "shoulder": "Bark",
+      "back": "Plecy",
+      "wrist": "Nadgarstek",
+      "knee": "Kolano",
+      "other": "Inne"
+    },
     "minutes": "min",
     "offline": "Offline",
     "newSession": "Nowa sesja",
@@ -260,14 +309,12 @@
     "appearance": "Wygląd",
     "language": "Język",
     "profileInfo": "Informacje o profilu",
-    "profileInfoDesc": "Zaktualizuj nazwę wyświetlaną i preferowany stopień.",
+    "profileInfoDesc": "Zaktualizuj nazwę wyświetlaną.",
     "displayName": "Nazwa wyświetlana",
     "displayNamePlaceholder": "Twoja nazwa wspinaczkowa",
-    "gradeSystem": "System stopni",
-    "selectGradeSystem": "Wybierz system stopni",
-    "preferredGrade": "Preferowany stopień",
-    "selectMaxGrade": "Wybierz swój komfortowy maks. stopień",
-    "currentMaxGrade": "Twój aktualny komfortowy maks. stopień",
+    "levelAutoComputed": "Twój poziom wspinaczkowy jest obliczany automatycznie na podstawie zalogowanych sesji.",
+    "saveProfile": "Zapisz profil",
+    "saved": "Zapisano!",
     "saveProfile": "Zapisz profil",
     "saved": "Zapisano!",
     "gymConfiguration": "Konfiguracja siłowni",
@@ -306,7 +353,7 @@
     "color": "kolor",
     "level": "poziom",
     "profileSaveError": "Nie udało się zapisać profilu. Spróbuj ponownie.",
-    "enterGradeLabel": "Wprowadź preferowaną etykietę stopnia (np. Niebieski)"
+    "levelAutoComputed": "Twój poziom wspinaczkowy zostanie obliczony automatycznie na podstawie zalogowanych sesji."
   },
   "gyms": {
     "title": "Zarządzanie siłowniami",
@@ -325,7 +372,8 @@
     "colorsSystem": "Kolory",
     "numericSystem": "Numeryczne",
     "colorsDesc": "Kolory (Żółty, Zielony, Niebieski...)",
-    "numericDesc": "Numeryczne (1, 2, 3...)"
+    "numericDesc": "Numeryczne (1, 2, 3...)",
+    "gradeSystem": "System stopniowania"
   },
   "filters": {
     "sessionType": "Typ sesji",
@@ -446,5 +494,61 @@
     "protocolsExplain": "Protokoły definiują czas i strukturę ćwiczeń jak repetery, max hangi itp.",
     "noTimingDefined": "Brak zdefiniowanego czasu",
     "hold": "trzymanie"
+  },
+  "templates": {
+    "title": "Szablony",
+    "new": "Nowy",
+    "createTemplate": "Utwórz szablon",
+    "templateName": "Nazwa szablonu",
+    "templateNamePlaceholder": "np. Protokół max hangów",
+    "type": "Typ",
+    "onWall": "NA ŚCIANCE (Bouldering)",
+    "offWall": "POZA ŚCIANKĄ (Siła)",
+    "created": "Szablon utworzony!",
+    "deleted": "Szablon usunięty",
+    "saved": "Szablon zapisany!",
+    "noStrengthTemplates": "Brak szablonów siłowych",
+    "noBouldersTemplates": "Brak szablonów boulderowych",
+    "createStrengthDesc": "Twórz szablony, aby szybko dodawać ćwiczenia do sesji",
+    "createBoulderDesc": "Twórz szablony, aby definiować cel sesji i preferencje logowania",
+    "exercises": "ćwiczeń",
+    "exercise": "ćwiczenie",
+    "preset": "Preset",
+    "systemPreset": "Preset systemowy",
+    "sessionTemplate": "Szablon sesji",
+    "addExercise": "Dodaj ćwiczenie",
+    "addExerciseToTemplate": "Dodaj ćwiczenie do szablonu",
+    "noExercisesInTemplate": "Brak ćwiczeń w tym szablonie",
+    "selectProtocol": "Wybierz protokół",
+    "skip": "Pomiń",
+    "addWithProtocol": "Dodaj z protokołem",
+    "noProtocolsAvailable": "Brak dostępnych protokołów",
+    "sessionFocus": "Cel sesji",
+    "focusDescription": "Opis (opcjonalnie)",
+    "focusDescriptionPlaceholder": "np. Skup się na ruchach siłowych",
+    "gradeFocus": "Skupienie na stopniu",
+    "gradeFocusDesc": "Względem Twojego preferowanego stopnia",
+    "wellBelowBaseline": "Znacznie poniżej bazowego",
+    "belowBaseline": "Poniżej bazowego",
+    "aroundBaseline": "Wokół bazowego",
+    "aboveBaseline": "Powyżej bazowego",
+    "wellAboveBaseline": "Znacznie powyżej bazowego",
+    "recommendedDuration": "Zalecany czas trwania",
+    "zoneDistribution": "Wskazówki rozkładu stref",
+    "saveTemplate": "Zapisz szablon",
+    "focusTypes": {
+      "project": "Projekt",
+      "projectDesc": "Trudne próby, notatki beta",
+      "volume": "Objętość",
+      "volumeDesc": "Duży przebieg, łatwiejsze stopnie",
+      "limit": "Limit",
+      "limitDesc": "Maksymalna trudność",
+      "technique": "Technika",
+      "techniqueDesc": "Praca stóp, jakość ruchu",
+      "warmup": "Rozgrzewka",
+      "warmupDesc": "Stopniowa progresja",
+      "custom": "Własny",
+      "customDesc": "Zdefiniuj własny"
+    }
   }
 }

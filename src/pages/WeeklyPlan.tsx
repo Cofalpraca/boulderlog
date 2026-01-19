@@ -103,17 +103,29 @@ export default function WeeklyPlan() {
     enabled: !!weeklyPlan,
   });
 
-  // Fetch templates
+  // Fetch templates - include BOTH user templates AND system templates
   const { data: templates } = useQuery({
     queryKey: ['templates', user?.id],
     queryFn: async () => {
-      const { data } = await supabase
+      // Fetch user templates
+      const { data: userTemplates } = await supabase
         .from('templates')
         .select('*')
         .eq('user_id', user!.id)
         .order('template_type')
         .order('name');
-      return data || [];
+      
+      // Fetch system templates (is_system = true)
+      const { data: systemTemplates } = await supabase
+        .from('templates')
+        .select('*')
+        .eq('is_system', true)
+        .order('template_type')
+        .order('name');
+      
+      // Combine and deduplicate
+      const combined = [...(userTemplates || []), ...(systemTemplates || [])];
+      return combined;
     },
     enabled: !!user,
   });

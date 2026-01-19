@@ -7,12 +7,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { User, MapPin, Palette, Loader2, Check, ChevronRight, ChevronLeft } from 'lucide-react';
 import logo from '@/assets/logo-user.png';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { Database } from '@/integrations/supabase/types';
+
+// Predefined accessible color palette (shared with GymMappings.tsx)
+const GRADE_COLORS = [
+  { hex: '#FACC15', name: 'Yellow' },
+  { hex: '#22C55E', name: 'Green' },
+  { hex: '#3B82F6', name: 'Blue' },
+  { hex: '#EF4444', name: 'Red' },
+  { hex: '#A855F7', name: 'Purple' },
+  { hex: '#F97316', name: 'Orange' },
+  { hex: '#EC4899', name: 'Pink' },
+  { hex: '#06B6D4', name: 'Cyan' },
+  { hex: '#FFFFFF', name: 'White' },
+  { hex: '#9CA3AF', name: 'Gray' },
+] as const;
 
 type GradingType = Database['public']['Enums']['grading_type'];
 
@@ -58,9 +73,8 @@ export default function Onboarding() {
   const [submitting, setSubmitting] = useState(false);
   
   // Step 1: Profile
+  // NOTE: preferred_grade is deprecated - user level is now computed automatically from boulder logs
   const [displayName, setDisplayName] = useState('');
-  const [preferredGradeSystem, setPreferredGradeSystem] = useState<GradingType | ''>('');
-  const [preferredGrade, setPreferredGrade] = useState('');
   
   // Step 2: Gym - track created gym ID to avoid duplicates
   const [gymName, setGymName] = useState('');
@@ -71,60 +85,21 @@ export default function Onboarding() {
   // Step 3: Grade mappings - initialized based on grading type
   const [gradeMappings, setGradeMappings] = useState<LocalGradeMapping[]>(DEFAULT_COLORS);
 
-  const GRADE_SYSTEMS: { value: GradingType; label: string }[] = [
-    { value: 'font', label: 'Fontainebleau (6a, 7a...)' },
-    { value: 'v_scale', label: 'V-Scale (V0, V1...)' },
-    { value: 'colors', label: t('gyms.colorsSystem', 'Colors (custom labels)') },
-    { value: 'numeric', label: t('gyms.numericSystem', 'Numeric (1, 2, 3...)') },
-  ];
-
-  const getPreferredGradeOptions = () => {
-    switch (preferredGradeSystem) {
-      case 'font':
-        return FONT_GRADES;
-      case 'v_scale':
-        return V_GRADES;
-      case 'numeric':
-        return NUMERIC_GRADES;
-      case 'colors':
-        return []; // Will use free text input
-      default:
-        return [];
-    }
-  };
-
-  const formatPreferredGrade = (): string | null => {
-    // Only return a value if BOTH system and grade are selected
-    // This makes preferred_grade truly optional
-    if (!preferredGradeSystem || !preferredGrade) return null;
-    return `${preferredGradeSystem}:${preferredGrade}`;
-  };
+  // NOTE: preferred_grade field is deprecated and no longer used
+  // User level is now computed automatically from boulder logs
+  // See src/lib/userLevel.ts for the computation logic
 
   const handleProfileSubmit = async () => {
     if (!user || !displayName) return;
     setSubmitting(true);
     
-    // Build update object - only include preferred_grade if it has a value
-    const updateData: { display_name: string; preferred_grade?: string | null } = {
-      display_name: displayName,
-    };
-    
-    const formattedGrade = formatPreferredGrade();
-    // Only set preferred_grade if user actually selected one
-    // Setting null explicitly clears any previous value
-    if (formattedGrade) {
-      updateData.preferred_grade = formattedGrade;
-    }
-    // If not set, we simply don't update preferred_grade field
-    // This prevents any validation issues with the field
-    
+    // Only update display_name - preferred_grade is deprecated
     const { error } = await supabase
       .from('profiles')
-      .update(updateData)
+      .update({ display_name: displayName })
       .eq('id', user.id);
     
     if (error) {
-      // Show user-friendly error
       toast({ 
         title: t('common.error'), 
         description: t('onboarding.profileSaveError'),
@@ -324,50 +299,9 @@ export default function Onboarding() {
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label>{t('settings.gradeSystem')} ({t('common.optional', 'optional')})</Label>
-                <Select 
-                  value={preferredGradeSystem} 
-                  onValueChange={(v) => {
-                    setPreferredGradeSystem(v as GradingType);
-                    setPreferredGrade(''); // Reset when system changes
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('settings.selectGradeSystem')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GRADE_SYSTEMS.map((sys) => (
-                      <SelectItem key={sys.value} value={sys.value}>{sys.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {preferredGradeSystem && (
-                <div className="space-y-2">
-                  <Label>{t('settings.preferredGrade')}</Label>
-                  {preferredGradeSystem === 'colors' ? (
-                    <Input
-                      placeholder={t('onboarding.enterGradeLabel', 'Enter your preferred grade label (e.g., Blue)')}
-                      value={preferredGrade}
-                      onChange={(e) => setPreferredGrade(e.target.value)}
-                    />
-                  ) : (
-                    <Select value={preferredGrade} onValueChange={setPreferredGrade}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('settings.selectMaxGrade')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getPreferredGradeOptions().map((g) => (
-                          <SelectItem key={g} value={g}>{g}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  <p className="text-xs text-muted-foreground">{t('settings.currentMaxGrade')}</p>
-                </div>
-              )}
+              <p className="text-sm text-muted-foreground">
+                {t('onboarding.levelAutoComputed', 'Your climbing level will be calculated automatically from your logged sessions.')}
+              </p>
               
               <Button 
                 className="w-full" 
@@ -459,12 +393,52 @@ export default function Onboarding() {
                   <Card key={index} className="p-3 bg-secondary/50">
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={mapping.color_hex}
-                          onChange={(e) => updateMapping(index, 'color_hex', e.target.value)}
-                          className="w-8 h-8 rounded cursor-pointer"
-                        />
+                        {/* Fixed color palette selector - same as GymMappings */}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="w-8 h-8 rounded border-2 border-border hover:border-primary transition-colors flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: mapping.color_hex || '#9CA3AF' }}
+                              aria-label={t('gradeMappings.selectColor', 'Select color')}
+                            />
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-3" align="start">
+                            <div className="space-y-2">
+                              <p className="text-xs font-medium text-muted-foreground">{t('gradeMappings.selectColor', 'Select color')}</p>
+                              <div className="grid grid-cols-5 gap-2">
+                                {GRADE_COLORS.map((color) => {
+                                  const isSelected = mapping.color_hex === color.hex;
+                                  const isUsed = gradeMappings.some((m, i) => i !== index && m.color_hex === color.hex);
+                                  return (
+                                    <button
+                                      key={color.hex}
+                                      type="button"
+                                      onClick={() => updateMapping(index, 'color_hex', color.hex)}
+                                      className={`w-8 h-8 rounded-md border-2 transition-all flex items-center justify-center ${
+                                        isSelected 
+                                          ? 'border-primary ring-2 ring-primary/50' 
+                                          : isUsed 
+                                            ? 'border-border/50 opacity-40 cursor-not-allowed' 
+                                            : 'border-border hover:border-primary/50'
+                                      }`}
+                                      style={{ backgroundColor: color.hex }}
+                                      disabled={isUsed && !isSelected}
+                                      title={isUsed ? `${color.name} (${t('gradeMappings.alreadyUsed', 'already used')})` : color.name}
+                                    >
+                                      {isSelected && (
+                                        <Check className={`h-4 w-4 ${color.hex === '#FFFFFF' || color.hex === '#FACC15' ? 'text-black' : 'text-white'}`} />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {GRADE_COLORS.find(c => c.hex === mapping.color_hex)?.name || 'Gray'}
+                              </p>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                         <Input
                           placeholder="Label"
                           value={mapping.label}

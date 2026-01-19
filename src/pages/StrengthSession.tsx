@@ -89,6 +89,9 @@ export default function StrengthSession() {
   const [rpe, setRpe] = useState<number>(5);
   const [fingerFatigue, setFingerFatigue] = useState<number>(5);
   const [painFlag, setPainFlag] = useState(false);
+  const [painLevel, setPainLevel] = useState<number | null>(null);
+  const [painArea, setPainArea] = useState<string | null>(null);
+  const [painNote, setPainNote] = useState('');
   const [endDialogOpen, setEndDialogOpen] = useState(false);
   const [exerciseDialogOpen, setExerciseDialogOpen] = useState(false);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
@@ -391,6 +394,9 @@ export default function StrengthSession() {
           rpe,
           finger_fatigue: fingerFatigue,
           pain_flag: painFlag,
+          pain_level: painFlag ? painLevel : null,
+          pain_area: painFlag ? painArea : null,
+          pain_note: painFlag ? (painNote || null) : null,
         }).eq('id', sessionId);
 
         await queryClient.invalidateQueries({ queryKey: ['sessions'] });
@@ -485,6 +491,12 @@ export default function StrengthSession() {
                 setFingerFatigue={setFingerFatigue}
                 painFlag={painFlag}
                 setPainFlag={setPainFlag}
+                painLevel={painLevel}
+                setPainLevel={setPainLevel}
+                painArea={painArea}
+                setPainArea={setPainArea}
+                painNote={painNote}
+                setPainNote={setPainNote}
                 totalSets={totalSets}
                 exerciseCount={sessionItems.length}
                 elapsedMinutes={elapsedMinutes}
@@ -803,6 +815,12 @@ function EndSessionForm({
   setFingerFatigue,
   painFlag,
   setPainFlag,
+  painLevel,
+  setPainLevel,
+  painArea,
+  setPainArea,
+  painNote,
+  setPainNote,
   totalSets,
   exerciseCount,
   elapsedMinutes,
@@ -818,6 +836,12 @@ function EndSessionForm({
   setFingerFatigue: (v: number) => void;
   painFlag: boolean;
   setPainFlag: (v: boolean) => void;
+  painLevel: number | null;
+  setPainLevel: (v: number | null) => void;
+  painArea: string | null;
+  setPainArea: (v: string | null) => void;
+  painNote: string;
+  setPainNote: (v: string) => void;
   totalSets: number;
   exerciseCount: number;
   elapsedMinutes: number;
@@ -825,6 +849,16 @@ function EndSessionForm({
   saving: boolean;
   t: (key: string) => string;
 }) {
+  const painAreas = [
+    { value: 'fingers', label: t('session.painAreas.fingers') },
+    { value: 'elbow', label: t('session.painAreas.elbow') },
+    { value: 'shoulder', label: t('session.painAreas.shoulder') },
+    { value: 'back', label: t('session.painAreas.back') },
+    { value: 'wrist', label: t('session.painAreas.wrist') },
+    { value: 'knee', label: t('session.painAreas.knee') },
+    { value: 'other', label: t('session.painAreas.other') },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Summary */}
@@ -870,15 +904,72 @@ function EndSessionForm({
       </div>
 
       {/* Pain Flag */}
-      <div className="flex items-center justify-between">
-        <Label>{t('session.anyPain')}</Label>
-        <Button
-          variant={painFlag ? 'destructive' : 'outline'}
-          size="sm"
-          onClick={() => setPainFlag(!painFlag)}
-        >
-          {painFlag ? t('common.yes') : t('common.no')}
-        </Button>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label>{t('session.anyPain')}</Label>
+          <Button
+            variant={painFlag ? 'destructive' : 'outline'}
+            size="sm"
+            onClick={() => setPainFlag(!painFlag)}
+          >
+            {painFlag ? t('common.yes') : t('common.no')}
+          </Button>
+        </div>
+
+        {/* Pain Details (shown when pain_flag is true) */}
+        {painFlag && (
+          <div className="space-y-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+            {/* Pain Level */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label className="text-sm">{t('session.painLevel')}</Label>
+                <span className="font-mono text-sm text-destructive">
+                  {painLevel ?? '-'}/5
+                </span>
+              </div>
+              <Slider
+                value={[painLevel ?? 1]}
+                onValueChange={([v]) => setPainLevel(v)}
+                min={1}
+                max={5}
+                step={1}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('session.painLevelDesc')}
+              </p>
+            </div>
+
+            {/* Pain Area */}
+            <div className="space-y-2">
+              <Label className="text-sm">{t('session.painArea')}</Label>
+              <select
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={painArea ?? ''}
+                onChange={(e) => setPainArea(e.target.value || null)}
+              >
+                <option value="">{t('session.selectPainArea')}</option>
+                {painAreas.map((area) => (
+                  <option key={area.value} value={area.value}>
+                    {area.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Pain Note */}
+            <div className="space-y-2">
+              <Label className="text-sm">
+                {t('session.painNote')} <span className="text-muted-foreground">({t('common.optional')})</span>
+              </Label>
+              <Textarea
+                placeholder={t('session.painNotePlaceholder')}
+                value={painNote}
+                onChange={(e) => setPainNote(e.target.value)}
+                className="h-16"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Notes */}
