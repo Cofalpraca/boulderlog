@@ -15,34 +15,8 @@ import { ArrowLeft, User, Shield, Loader2, Check, MapPin, Mail, Lock, Palette, G
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
-type GradingType = Database['public']['Enums']['grading_type'];
-
-const FONT_GRADES = ['4', '4+', '5', '5+', '6a', '6a+', '6b', '6b+', '6c', '6c+', '7a', '7a+', '7b', '7b+', '7c', '7c+', '8a', '8a+', '8b'];
-const V_GRADES = ['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10', 'V11', 'V12', 'V13', 'V14', 'V15', 'V16', 'V17'];
-const NUMERIC_GRADES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-
-const GRADE_SYSTEMS: { value: GradingType; label: string }[] = [
-  { value: 'font', label: 'Fontainebleau (6a, 7a...)' },
-  { value: 'v_scale', label: 'V-Scale (V0, V1...)' },
-  { value: 'colors', label: 'Colors (custom labels)' },
-  { value: 'numeric', label: 'Numeric (1, 2, 3...)' },
-];
-
-function parsePreferredGrade(grade: string | null): { system: GradingType | ''; value: string } {
-  if (!grade) return { system: '', value: '' };
-  const [system, ...valueParts] = grade.split(':');
-  const value = valueParts.join(':');
-  if (['font', 'v_scale', 'colors', 'numeric'].includes(system)) {
-    return { system: system as GradingType, value };
-  }
-  if (grade.startsWith('V')) return { system: 'v_scale', value: grade };
-  if (/^\d+[a-c]?\+?$/i.test(grade)) return { system: 'font', value: grade };
-  return { system: '', value: grade };
-}
-
-function formatPreferredGrade(system: GradingType, value: string): string {
-  return `${system}:${value}`;
-}
+// NOTE: preferred_grade is deprecated - user level is now computed automatically from boulder logs
+// See src/lib/userLevel.ts for the computation logic
 
 export default function Settings() {
   const { user, session } = useAuth();
@@ -62,8 +36,6 @@ export default function Settings() {
 
   // Profile state
   const [displayName, setDisplayName] = useState('');
-  const [gradeSystem, setGradeSystem] = useState<GradingType | ''>('');
-  const [gradeValue, setGradeValue] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
 
@@ -73,13 +45,13 @@ export default function Settings() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [resetEmailSending, setResetEmailSending] = useState(false);
 
-  // Fetch profile
+  // Fetch profile (preferred_grade is deprecated and no longer used)
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['settings_profile', user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('display_name, preferred_grade')
+        .select('display_name')
         .eq('id', user!.id)
         .single();
       return data;
@@ -87,59 +59,21 @@ export default function Settings() {
     enabled: !!user,
   });
 
-  // Fetch user's gym mappings for color system
-  const { data: gymMappings } = useQuery({
-    queryKey: ['settings_gym_mappings', user?.id],
-    queryFn: async () => {
-      const { data: gyms } = await supabase
-        .from('gyms')
-        .select('id')
-        .eq('user_id', user!.id);
-      
-      if (!gyms?.length) return [];
-      
-      const { data } = await supabase
-        .from('gym_grade_mappings')
-        .select('label')
-        .in('gym_id', gyms.map(g => g.id));
-      
-      const uniqueLabels = [...new Set(data?.map(m => m.label) || [])];
-      return uniqueLabels;
-    },
-    enabled: !!user,
-  });
-
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || '');
-      const parsed = parsePreferredGrade(profile.preferred_grade);
-      setGradeSystem(parsed.system);
-      setGradeValue(parsed.value);
     }
   }, [profile]);
 
-  const getGradeOptions = () => {
-    switch (gradeSystem) {
-      case 'font': return FONT_GRADES;
-      case 'v_scale': return V_GRADES;
-      case 'numeric': return NUMERIC_GRADES;
-      case 'colors': return gymMappings || [];
-      default: return [];
-    }
-  };
-
+  // Save profile - only display_name is editable now (preferred_grade is deprecated)
   const handleProfileSave = async () => {
     if (!user || !displayName) return;
     setProfileSaving(true);
     setProfileSaved(false);
 
-    const preferredGrade = gradeSystem && gradeValue 
-      ? formatPreferredGrade(gradeSystem, gradeValue)
-      : null;
-
     const { error } = await supabase
       .from('profiles')
-      .update({ display_name: displayName, preferred_grade: preferredGrade })
+      .update({ display_name: displayName })
       .eq('id', user.id);
 
     if (error) {
@@ -255,50 +189,9 @@ export default function Settings() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>{t('settings.gradeSystem')}</Label>
-                  <Select 
-                    value={gradeSystem} 
-                    onValueChange={(v) => {
-                      setGradeSystem(v as GradingType);
-                      setGradeValue('');
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('settings.selectGradeSystem')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {GRADE_SYSTEMS.map((sys) => (
-                        <SelectItem key={sys.value} value={sys.value}>{sys.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {gradeSystem && (
-                  <div className="space-y-2">
-                    <Label>{t('settings.preferredGrade')}</Label>
-                    {gradeSystem === 'colors' && (!gymMappings || gymMappings.length === 0) ? (
-                      <Input
-                        placeholder={t('settings.displayNamePlaceholder')}
-                        value={gradeValue}
-                        onChange={(e) => setGradeValue(e.target.value)}
-                      />
-                    ) : (
-                      <Select value={gradeValue} onValueChange={setGradeValue}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('settings.selectMaxGrade')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getGradeOptions().map((g) => (
-                            <SelectItem key={g} value={g}>{g}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                    <p className="text-xs text-muted-foreground">{t('settings.currentMaxGrade')}</p>
-                  </div>
-                )}
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.levelAutoComputed', 'Your climbing level is calculated automatically from your logged sessions.')}
+                </p>
 
                 <Button className="w-full" onClick={handleProfileSave} disabled={!displayName || profileSaving}>
                   {profileSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : profileSaved ? <Check className="mr-2 h-4 w-4" /> : null}

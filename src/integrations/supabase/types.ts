@@ -462,7 +462,10 @@ export type Database = {
           finger_fatigue: number | null
           id: string
           notes: string | null
+          pain_area: string | null
           pain_flag: boolean | null
+          pain_level: number | null
+          pain_note: string | null
           rpe: number | null
           session_type: Database["public"]["Enums"]["session_type"]
           subtype: string | null
@@ -476,7 +479,10 @@ export type Database = {
           finger_fatigue?: number | null
           id?: string
           notes?: string | null
+          pain_area?: string | null
           pain_flag?: boolean | null
+          pain_level?: number | null
+          pain_note?: string | null
           rpe?: number | null
           session_type: Database["public"]["Enums"]["session_type"]
           subtype?: string | null
@@ -490,7 +496,10 @@ export type Database = {
           finger_fatigue?: number | null
           id?: string
           notes?: string | null
+          pain_area?: string | null
           pain_flag?: boolean | null
+          pain_level?: number | null
+          pain_note?: string | null
           rpe?: number | null
           session_type?: Database["public"]["Enums"]["session_type"]
           subtype?: string | null
@@ -553,31 +562,37 @@ export type Database = {
       }
       templates: {
         Row: {
+          config_json: Json | null
           created_at: string
           id: string
+          is_system: boolean | null
           name: string
           subtype: string | null
           template_type: Database["public"]["Enums"]["template_type"]
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          config_json?: Json | null
           created_at?: string
           id?: string
+          is_system?: boolean | null
           name: string
           subtype?: string | null
           template_type: Database["public"]["Enums"]["template_type"]
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          config_json?: Json | null
           created_at?: string
           id?: string
+          is_system?: boolean | null
           name?: string
           subtype?: string | null
           template_type?: Database["public"]["Enums"]["template_type"]
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

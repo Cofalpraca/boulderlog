@@ -61,6 +61,9 @@ export default function BoulderSession() {
   const [rpe, setRpe] = useState<number>(5);
   const [fingerFatigue, setFingerFatigue] = useState<number>(5);
   const [painFlag, setPainFlag] = useState(false);
+  const [painLevel, setPainLevel] = useState<number | null>(null);
+  const [painArea, setPainArea] = useState<string | null>(null);
+  const [painNote, setPainNote] = useState('');
   const [endDialogOpen, setEndDialogOpen] = useState(false);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -398,6 +401,9 @@ export default function BoulderSession() {
           rpe,
           finger_fatigue: fingerFatigue,
           pain_flag: painFlag,
+          pain_level: painFlag ? painLevel : null,
+          pain_area: painFlag ? painArea : null,
+          pain_note: painFlag ? (painNote || null) : null,
         }).eq('id', sessionId);
 
         // Compute and save zone summary
@@ -515,6 +521,12 @@ export default function BoulderSession() {
                 setFingerFatigue={setFingerFatigue}
                 painFlag={painFlag}
                 setPainFlag={setPainFlag}
+                painLevel={painLevel}
+                setPainLevel={setPainLevel}
+                painArea={painArea}
+                setPainArea={setPainArea}
+                painNote={painNote}
+                setPainNote={setPainNote}
                 totalBoulders={totalBoulders}
                 elapsedMinutes={elapsedMinutes}
                 onSave={endSession}
@@ -539,28 +551,37 @@ export default function BoulderSession() {
                 key={mapping.id} 
                 className={`relative overflow-hidden transition-all ${hasCount ? 'ring-2 ring-primary/50' : ''}`}
                 style={{
+                  // Readable background: use a subtle tint of the color with proper opacity for dark mode
                   background: mapping.color_hex 
-                    ? `linear-gradient(135deg, ${mapping.color_hex}15, ${mapping.color_hex}05)`
+                    ? `linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 100%)`
                     : undefined,
+                  borderLeftColor: mapping.color_hex || undefined,
+                  borderLeftWidth: mapping.color_hex ? '4px' : undefined,
                 }}
               >
-                {/* Color indicator */}
+                {/* Color accent header bar - visible but not overwhelming */}
                 {mapping.color_hex && (
                   <div 
-                    className="absolute top-0 left-0 w-1 h-full"
+                    className="absolute top-0 left-0 right-0 h-1"
                     style={{ backgroundColor: mapping.color_hex }}
                   />
                 )}
                 
-                <CardContent className="p-3 pl-4">
+                <CardContent className="p-3 pt-4">
                   {/* Grade label + details button */}
                   <div className="flex items-center justify-between mb-2">
-                    <span 
-                      className="font-bold text-lg"
-                      style={{ color: mapping.color_hex || undefined }}
-                    >
-                      {mapping.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {/* Color badge for visual identification */}
+                      {mapping.color_hex && (
+                        <span 
+                          className="w-4 h-4 rounded-full shrink-0 ring-1 ring-border"
+                          style={{ backgroundColor: mapping.color_hex }}
+                        />
+                      )}
+                      <span className="font-bold text-lg text-foreground">
+                        {mapping.label}
+                      </span>
+                    </div>
                     
                     {/* Open detail drawer to view/edit individual boulders */}
                     <Sheet>
@@ -752,6 +773,12 @@ function EndSessionForm({
   setFingerFatigue,
   painFlag,
   setPainFlag,
+  painLevel,
+  setPainLevel,
+  painArea,
+  setPainArea,
+  painNote,
+  setPainNote,
   totalBoulders,
   elapsedMinutes,
   onSave,
@@ -766,12 +793,28 @@ function EndSessionForm({
   setFingerFatigue: (v: number) => void;
   painFlag: boolean;
   setPainFlag: (v: boolean) => void;
+  painLevel: number | null;
+  setPainLevel: (v: number | null) => void;
+  painArea: string | null;
+  setPainArea: (v: string | null) => void;
+  painNote: string;
+  setPainNote: (v: string) => void;
   totalBoulders: number;
   elapsedMinutes: number;
   onSave: () => void;
   saving: boolean;
   t: (key: string) => string;
 }) {
+  const painAreas = [
+    { value: 'fingers', label: t('session.painAreas.fingers') },
+    { value: 'elbow', label: t('session.painAreas.elbow') },
+    { value: 'shoulder', label: t('session.painAreas.shoulder') },
+    { value: 'back', label: t('session.painAreas.back') },
+    { value: 'wrist', label: t('session.painAreas.wrist') },
+    { value: 'knee', label: t('session.painAreas.knee') },
+    { value: 'other', label: t('session.painAreas.other') },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Summary */}
@@ -817,15 +860,72 @@ function EndSessionForm({
       </div>
 
       {/* Pain Flag */}
-      <div className="flex items-center gap-3">
-        <Button
-          variant={painFlag ? 'destructive' : 'outline'}
-          size="sm"
-          onClick={() => setPainFlag(!painFlag)}
-        >
-          <AlertTriangle className="mr-2 h-4 w-4" />
-          {painFlag ? t('session.painReported') : t('session.reportPain')}
-        </Button>
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <Button
+            variant={painFlag ? 'destructive' : 'outline'}
+            size="sm"
+            onClick={() => setPainFlag(!painFlag)}
+          >
+            <AlertTriangle className="mr-2 h-4 w-4" />
+            {painFlag ? t('session.painReported') : t('session.reportPain')}
+          </Button>
+        </div>
+
+        {/* Pain Details (shown when pain_flag is true) */}
+        {painFlag && (
+          <div className="space-y-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+            {/* Pain Level */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label className="text-sm">{t('session.painLevel')}</Label>
+                <span className="font-mono text-sm text-destructive">
+                  {painLevel ?? '-'}/5
+                </span>
+              </div>
+              <Slider
+                value={[painLevel ?? 1]}
+                onValueChange={([v]) => setPainLevel(v)}
+                min={1}
+                max={5}
+                step={1}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('session.painLevelDesc')}
+              </p>
+            </div>
+
+            {/* Pain Area */}
+            <div className="space-y-2">
+              <Label className="text-sm">{t('session.painArea')}</Label>
+              <select
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={painArea ?? ''}
+                onChange={(e) => setPainArea(e.target.value || null)}
+              >
+                <option value="">{t('session.selectPainArea')}</option>
+                {painAreas.map((area) => (
+                  <option key={area.value} value={area.value}>
+                    {area.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Pain Note */}
+            <div className="space-y-2">
+              <Label className="text-sm">
+                {t('session.painNote')} <span className="text-muted-foreground">({t('common.optional')})</span>
+              </Label>
+              <Textarea
+                placeholder={t('session.painNotePlaceholder')}
+                value={painNote}
+                onChange={(e) => setPainNote(e.target.value)}
+                className="h-16"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Notes */}

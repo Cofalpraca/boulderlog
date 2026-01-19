@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { startOfWeek, format } from 'date-fns';
 import { getMaxGrade } from '@/lib/analytics';
 import { PendingSyncCard } from '@/components/PendingSyncCard';
+import { UserLevelCard } from '@/components/UserLevelCard';
 import logo from '@/assets/logo-user.png';
 
 export default function Dashboard() {
@@ -203,9 +204,16 @@ export default function Dashboard() {
           <PendingSyncCard />
         </section>
 
+        {/* User Level Card */}
+        {user && (
+          <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+            <UserLevelCard userId={user.id} />
+          </section>
+        )}
+
         {/* Stats Preview */}
         <section className="animate-slide-up" style={{
-        animationDelay: '0.2s'
+        animationDelay: '0.25s'
       }}>
           <Card className="glass overflow-hidden">
             <CardHeader className="pb-2">

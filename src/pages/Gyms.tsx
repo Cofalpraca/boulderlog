@@ -262,7 +262,7 @@ function GymForm({ onSuccess, gym }: { onSuccess: () => void; gym?: Gym }) {
         <Input id="city" value={city} onChange={e => setCity(e.target.value)} placeholder={t('onboarding.cityPlaceholder')} />
       </div>
       <div className="space-y-2">
-        <Label>{t('settings.gradeSystem')}</Label>
+        <Label>{t('gyms.gradeSystem', 'Grading System')}</Label>
         <Select value={gradingType} onValueChange={v => setGradingType(v as GradingType)} disabled={!!gym}>
           <SelectTrigger>
             <SelectValue />
