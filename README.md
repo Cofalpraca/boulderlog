@@ -22,17 +22,20 @@ The application supports both **ON-WALL** (bouldering gym sessions) and **OFF-WA
 ## Technology Stack
 
 ### Frontend
+
 - React
 - TypeScript
 - Progressive Web App (PWA)
 
 ### Backend
+
 - Supabase (Backend-as-a-Service)
   - PostgreSQL database
   - Authentication
   - API access
 
 ### Hosting
+
 - Frontend: Vercel
 - Backend & Database: Supabase
 
@@ -50,6 +53,7 @@ The application supports both **ON-WALL** (bouldering gym sessions) and **OFF-WA
 ## Installation & Development
 
 ### Prerequisites
+
 - Node.js (LTS recommended)
 - npm / yarn / pnpm
 - Supabase project (URL + anon key)
@@ -57,31 +61,33 @@ The application supports both **ON-WALL** (bouldering gym sessions) and **OFF-WA
 ### Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/your-username/boulderlog.git
    cd boulderlog
    ```
 
 2. Install dependencies:
-    ```bash
-    npm install
-    ```
+
+   ```bash
+   npm install
+   ```
 
 3. Create environment variables:
-    ```bash
-    cp .env.example .env.local
-    ```
+
+   ```bash
+   cp .env.example .env.local
+   ```
 
 4. Fill in Supabase credentials:
 
-    REACT_APP_SUPABASE_URL=your_supabase_url
-    REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
-
+   REACT_APP_SUPABASE_URL=your_supabase_url
+   REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 5. Run the development server:
-    ```
-    npm run dev
-    ```
+   ```
+   npm run dev
+   ```
 
 ## Progressive Web App (PWA)
 
@@ -151,3 +157,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
