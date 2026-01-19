@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Lock, Loader2 } from 'lucide-react';
-import logo from '@/assets/logo-transparent.png';
+import logo from '@/assets/logo-user.png';
 import { useToast } from '@/hooks/use-toast';
 
 // Helper function to translate Supabase auth errors to friendly messages
