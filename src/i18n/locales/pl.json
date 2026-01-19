@@ -126,14 +126,14 @@
       "noData": "Za mało danych",
       "addBoulders": "Dodaj co najmniej {{count}} boulderów, aby obliczyć swój poziom",
       "insufficientMapped": "Tylko {{mapped}} z {{total}} boulderów można zmapować (potrzeba {{min}})",
-      "noSessions": "Brak sesji NA ŚCIANCE w ostatnich 90 dniach",
+      "noSessions": "Brak sesji On-wall w ostatnich 90 dniach",
       "noLogs": "Brak zapisanych boulderów w ostatnich sesjach",
       "setupMappings": "Skonfiguruj mapowania stopni, aby zobaczyć swój poziom",
       "configureMappings": "Konfiguruj mapowania stopni",
       "howCalculated": "Jak to działa",
       "explanation": {
         "title": "Jak obliczany jest Twój poziom",
-        "intro": "Twój poziom wspinaczkowy jest obliczany automatycznie z historii sesji NA ŚCIANCE.",
+        "intro": "Twój poziom wspinaczkowy jest obliczany automatycznie z historii sesji On-wall.",
         "algorithm": "Średnia z Twoich najlepszych {{top}} boulderów z ostatnich {{days}} dni (wymagane minimum {{min}}).",
         "max": "Najwyższy stopień pokonany w tym oknie czasowym.",
         "normalization": "Stopnie z różnych siłowni są normalizowane przy użyciu V-scale jako wspólnej bazy, więc otrzymujesz dokładny poziom nawet jeśli wspinasz się w wielu siłowniach.",
@@ -152,8 +152,8 @@
     "days30": "30 dni",
     "days90": "90 dni",
     "allTime": "Cały czas",
-    "onWall": "NA ŚCIANCE",
-    "offWall": "POZA ŚCIANKĄ",
+    "onWall": "On-wall",
+    "offWall": "Off-wall",
     "developmentZones": "Strefy rozwoju",
     "noSessionData": "Brak danych sesji",
     "weeklyVolume": "Objętość tygodniowa",
@@ -166,7 +166,7 @@
     "easierThanAvg": "Łatwiejsza dla Ciebie",
     "completeSessionsMultipleGyms": "Ukończ sesje w wielu siłowniach, aby zobaczyć porównania",
     "gymStatistics": "Statystyki siłowni",
-    "trainingBalance": "Równowaga NA ŚCIANCE vs POZA ŚCIANKĄ",
+    "trainingBalance": "Równowaga On-wall vs Off-wall",
     "trainingBalanceDesc": "Porównanie sesji tygodniowych",
     "sessionDistribution": "Rozkład sesji",
     "trainingInsight": "Wskazówka treningowa",
@@ -183,8 +183,8 @@
     "sets": "Serie",
     "max": "Maks",
     "howCalculated": "Jak to działa",
-    "completeOnWallCta": "Ukończ sesję NA ŚCIANCE, aby wygenerować Strefy Rozwoju.",
-    "gymFilterNote": "Filtr siłowni dotyczy tylko sesji NA ŚCIANCE. Sesje POZA ŚCIANKĄ są globalne.",
+    "completeOnWallCta": "Ukończ sesję On-wall, aby wygenerować Strefy Rozwoju.",
+    "gymFilterNote": "Filtr siłowni dotyczy tylko sesji On-wall. Sesje Off-wall są globalne.",
     "count": "Liczba",
     "difficultyExplanation": {
       "title": "Wyjaśnienie Indeksu Trudności",
@@ -200,8 +200,8 @@
       "comfort": "Komfort: Stopnie znacznie poniżej maksimum. Dobre do rozgrzewki i ćwiczenia techniki.",
       "growth": "Wzrost: Stopnie blisko limitu. Idealne do progresu i rozwijania umiejętności.",
       "limit": "Limit: Stopnie na lub powyżej maksimum. Wyzwanie dla fizycznego sufitu.",
-      "computed": "Strefy są obliczane z sesji NA ŚCIANCE przy użyciu normalizacji stopni na podstawie historii wspinaczki.",
-      "updated": "Aktualizowane po ukończeniu sesji NA ŚCIANCE.",
+      "computed": "Strefy są obliczane z sesji On-wall przy użyciu normalizacji stopni na podstawie historii wspinaczki.",
+      "updated": "Aktualizowane po ukończeniu sesji On-wall.",
       "painNote": "Sesje z bólem są oznaczone i należy je interpretować ostrożnie."
     },
     "painCallout": {
@@ -211,8 +211,8 @@
     },
     "painInsights": {
       "painRecentDeload": "Ostatnio zgłoszono ból — rozważ tydzień regeneracyjny lub zmniejszoną intensywność.",
-      "painHighIntensity": "Zgłoszono ból przy wysokiej intensywności NA ŚCIANCE — rozważ skupienie na technice lub objętość na niższych stopniach.",
-      "painLowOffWall": "Zgłoszono ból przy niskiej aktywności POZA ŚCIANKĄ — rozważ dodanie sesji siłowej/prehab."
+      "painHighIntensity": "Zgłoszono ból przy wysokiej intensywności On-wall — rozważ skupienie na technice lub objętość na niższych stopniach.",
+      "painLowOffWall": "Zgłoszono ból przy niskiej aktywności Off-wall — rozważ dodanie sesji siłowej/prehab."
     },
     "painMarker": "Ból: Poziom {{level}}, {{area}}"
   },
@@ -378,9 +378,9 @@
   "filters": {
     "sessionType": "Typ sesji",
     "both": "Oba",
-    "onWallOnly": "Tylko NA ŚCIANCE",
-    "offWallOnly": "Tylko POZA ŚCIANKĄ",
-    "gymFilterNote": "Filtr siłowni dotyczy tylko sesji NA ŚCIANCE. Sesje POZA ŚCIANKĄ są globalne."
+    "onWallOnly": "Tylko On-wall",
+    "offWallOnly": "Tylko Off-wall",
+    "gymFilterNote": "Filtr siłowni dotyczy tylko sesji On-wall. Sesje Off-wall są globalne."
   },
   "history": {
     "title": "Historia sesji",
@@ -407,7 +407,7 @@
     "sessionRemoved": "Sesja usunięta",
     "selectGym": "Wybierz siłownię (opcjonalnie)",
     "noGym": "Bez siłowni",
-    "gymRecommended": "Zalecane dla sesji NA ŚCIANCE"
+    "gymRecommended": "Zalecane dla sesji On-wall"
   },
   "gradeMappings": {
     "title": "Mapowania stopni",
@@ -502,8 +502,8 @@
     "templateName": "Nazwa szablonu",
     "templateNamePlaceholder": "np. Protokół max hangów",
     "type": "Typ",
-    "onWall": "NA ŚCIANCE (Bouldering)",
-    "offWall": "POZA ŚCIANKĄ (Siła)",
+    "onWall": "On-wall (Bouldering)",
+    "offWall": "Off-wall (Siła)",
     "created": "Szablon utworzony!",
     "deleted": "Szablon usunięty",
     "saved": "Szablon zapisany!",

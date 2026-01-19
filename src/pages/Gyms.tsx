@@ -283,12 +283,12 @@ function GymForm({ onSuccess, gym }: { onSuccess: () => void; gym?: Gym }) {
   );
 }
 
-const FONT_GRADES = ['4', '4+', '5', '5+', '6a', '6a+', '6b', '6b+', '6c', '6c+', '7a', '7a+', '7b', '7b+', '7c', '7c+', '8a', '8a+', '8b'];
+const FONT_GRADES = ['4', '4+', '5', '5+', '5a', '5b', '5c', '6a', '6a+', '6b', '6b+', '6c', '6c+', '7a', '7a+', '7b', '7b+', '7c', '7c+', '8a', '8a+', '8b'];
 const V_GRADES = ['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10', 'V11', 'V12', 'V13', 'V14'];
 
 function getDefaultMappings(gradingType: GradingType, gymId: string) {
   if (gradingType === 'font') {
-    return ['4', '4+', '5', '5+', '6a', '6a+', '6b', '6b+', '6c', '6c+', '7a', '7a+', '7b', '7b+', '7c', '7c+', '8a'].map((g, i) => ({
+    return ['4', '4+', '5', '5+', '5a', '5b', '5c', '6a', '6a+', '6b', '6b+', '6c', '6c+', '7a', '7a+', '7b', '7b+', '7c', '7c+', '8a'].map((g, i) => ({
       gym_id: gymId, label: g, order_index: i,
       approx_font_min: g, approx_font_max: g,
       approx_v_min: null, approx_v_max: null,
