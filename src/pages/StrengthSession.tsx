@@ -4,7 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveSession } from '@/contexts/ActiveSessionContext';
 import { useOfflineStorage, generateTempId } from '@/hooks/useOfflineStorage';
+import { useSessionPersistence } from '@/hooks/useSessionPersistence';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +16,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { SessionExitConfirmation } from '@/components/SessionExitConfirmation';
 import { 
   ChevronLeft, Dumbbell, Plus, Minus, Timer, Save, X, Loader2, 
   CheckCircle2, Trash2, GripVertical, Hand, Zap, CircleDot, Sparkles, WifiOff, Settings2
@@ -88,6 +91,7 @@ export default function StrengthSession() {
   const [painFlag, setPainFlag] = useState(false);
   const [endDialogOpen, setEndDialogOpen] = useState(false);
   const [exerciseDialogOpen, setExerciseDialogOpen] = useState(false);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [startTime] = useState(new Date());
   const [selectedCategory, setSelectedCategory] = useState<ExerciseCategory>('fingers');
@@ -95,6 +99,10 @@ export default function StrengthSession() {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
   const [protocolDialogOpen, setProtocolDialogOpen] = useState(false);
+
+  // Session persistence
+  const { clearActiveSession } = useActiveSession();
+  const { saveSessionState, loadSessionState, clearSessionState, registerActiveSession } = useSessionPersistence(sessionId);
 
   const CATEGORY_LABELS: Record<ExerciseCategory, string> = {
     fingers: t('exercises.categories.fingers'),
@@ -404,13 +412,17 @@ export default function StrengthSession() {
     }
   };
 
-  const cancelSession = async () => {
-    if (confirm('Discard this session?')) {
-      if (!isOfflineSession && sessionId) {
-        await supabase.from('sessions').delete().eq('id', sessionId);
-      }
-      navigate('/');
+  const handleCancelClick = () => {
+    setExitConfirmOpen(true);
+  };
+
+  const confirmDiscard = async () => {
+    setExitConfirmOpen(false);
+    clearSessionState();
+    if (!isOfflineSession && sessionId) {
+      await supabase.from('sessions').delete().eq('id', sessionId);
     }
+    navigate('/');
   };
 
   const exercisesByCategory = availableExercises?.reduce((acc, ex) => {
@@ -421,10 +433,18 @@ export default function StrengthSession() {
 
   return (
     <div className="min-h-screen bg-background safe-area-top safe-area-bottom">
+      {/* Exit confirmation dialog */}
+      <SessionExitConfirmation
+        open={exitConfirmOpen}
+        onOpenChange={setExitConfirmOpen}
+        onConfirmDiscard={confirmDiscard}
+        onContinue={() => setExitConfirmOpen(false)}
+      />
+
       {/* Header */}
       <header className="sticky top-0 z-40 glass border-b border-border/50">
         <div className="container flex items-center h-14 px-4 gap-3">
-          <Button variant="ghost" size="icon" onClick={cancelSession}>
+          <Button variant="ghost" size="icon" onClick={handleCancelClick}>
             <X className="h-5 w-5" />
           </Button>
           <div className="flex-1">

@@ -5,8 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ActiveSessionProvider } from "@/contexts/ActiveSessionContext";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { ActiveSessionGuard } from "@/components/ActiveSessionGuard";
 import Dashboard from "@/pages/Dashboard";
 import Auth from "@/pages/Auth";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -110,8 +112,11 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <AppRoutes />
-            <OfflineIndicator />
+            <ActiveSessionProvider>
+              <AppRoutes />
+              <ActiveSessionGuard />
+              <OfflineIndicator />
+            </ActiveSessionProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

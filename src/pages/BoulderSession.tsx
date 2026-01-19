@@ -4,7 +4,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveSession } from '@/contexts/ActiveSessionContext';
 import { useOfflineStorage, generateTempId, type PendingBoulderLog } from '@/hooks/useOfflineStorage';
+import { useSessionPersistence } from '@/hooks/useSessionPersistence';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +15,7 @@ import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SessionExitConfirmation } from '@/components/SessionExitConfirmation';
 import { X, Mountain, Plus, Minus, Timer, Save, Tag, Loader2, AlertTriangle, CheckCircle2, WifiOff, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
@@ -59,8 +62,13 @@ export default function BoulderSession() {
   const [fingerFatigue, setFingerFatigue] = useState<number>(5);
   const [painFlag, setPainFlag] = useState(false);
   const [endDialogOpen, setEndDialogOpen] = useState(false);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [startTime] = useState(new Date());
+  
+  // Session persistence
+  const { clearActiveSession } = useActiveSession();
+  const { saveSessionState, loadSessionState, clearSessionState, registerActiveSession } = useSessionPersistence(sessionId);
   
   // Offline state
   const [offlineGym, setOfflineGym] = useState<Gym | null>(null);
@@ -180,6 +188,49 @@ export default function BoulderSession() {
       setBoulders(loadedBoulders);
     }
   }, [existingLogs, activeGradeMappings, boulders.length]);
+
+  // Register active session when component mounts
+  useEffect(() => {
+    if (sessionId && activeGym) {
+      registerActiveSession({
+        sessionId,
+        sessionType: 'on_wall',
+        gymId: activeGym.id,
+        gymName: activeGym.name,
+        isOffline: isOfflineSession,
+        route: `/session/${sessionId}/boulders`,
+      });
+    }
+  }, [sessionId, activeGym, isOfflineSession, registerActiveSession]);
+
+  // Save session state periodically
+  useEffect(() => {
+    if (boulders.length > 0 || deletedBoulderIds.size > 0) {
+      saveSessionState({
+        boulders,
+        deletedBoulderIds: Array.from(deletedBoulderIds),
+        sessionNotes,
+        rpe,
+        fingerFatigue,
+        painFlag,
+      });
+    }
+  }, [boulders, deletedBoulderIds, sessionNotes, rpe, fingerFatigue, painFlag, saveSessionState]);
+
+  // Load saved session state on mount
+  useEffect(() => {
+    const savedState = loadSessionState();
+    if (savedState && savedState.boulders && boulders.length === 0) {
+      setBoulders(savedState.boulders as IndividualBoulder[]);
+      if (savedState.deletedBoulderIds) {
+        setDeletedBoulderIds(new Set(savedState.deletedBoulderIds as string[]));
+      }
+      if (savedState.sessionNotes) setSessionNotes(savedState.sessionNotes);
+      if (savedState.rpe) setRpe(savedState.rpe);
+      if (savedState.fingerFatigue) setFingerFatigue(savedState.fingerFatigue);
+      if (savedState.painFlag !== undefined) setPainFlag(savedState.painFlag);
+    }
+  }, [loadSessionState]);
 
   // Aggregate boulders by grade for display
   const aggregatedByGrade = useMemo(() => {
@@ -322,6 +373,7 @@ export default function BoulderSession() {
         sonnerToast.success('Session saved offline', {
           description: `${totalBoulders} boulders logged. Will sync when online.`,
         });
+        clearSessionState();
         navigate('/');
       } else {
         // ONLINE: Save to Supabase
@@ -366,6 +418,7 @@ export default function BoulderSession() {
           title: 'Session saved!', 
           description: `${totalBoulders} boulders logged` 
         });
+        clearSessionState();
         navigate('/analytics');
       }
     } catch (error) {
@@ -380,15 +433,24 @@ export default function BoulderSession() {
     }
   };
 
-  const cancelSession = async () => {
-    if (confirm('Discard this session?')) {
-      if (isOfflineSession && offlineTempId) {
-        await deletePendingSession(offlineTempId);
-      } else if (sessionId) {
-        await supabase.from('sessions').delete().eq('id', sessionId);
-      }
-      navigate('/');
+  const handleCancelClick = () => {
+    setExitConfirmOpen(true);
+  };
+
+  const confirmDiscard = async () => {
+    setExitConfirmOpen(false);
+    clearSessionState();
+    if (isOfflineSession && offlineTempId) {
+      await deletePendingSession(offlineTempId);
+    } else if (sessionId) {
+      await supabase.from('sessions').delete().eq('id', sessionId);
     }
+    navigate('/');
+  };
+
+  // Called after successful save
+  const onSessionSaved = () => {
+    clearSessionState();
   };
 
   if (!activeGradeMappings?.length) {
@@ -401,10 +463,18 @@ export default function BoulderSession() {
 
   return (
     <div className="min-h-screen bg-background safe-area-top safe-area-bottom">
+      {/* Exit confirmation dialog */}
+      <SessionExitConfirmation
+        open={exitConfirmOpen}
+        onOpenChange={setExitConfirmOpen}
+        onConfirmDiscard={confirmDiscard}
+        onContinue={() => setExitConfirmOpen(false)}
+      />
+
       {/* Header */}
       <header className="sticky top-0 z-40 glass border-b border-border/50">
         <div className="container flex items-center h-14 px-4 gap-3">
-          <Button variant="ghost" size="icon" onClick={cancelSession}>
+          <Button variant="ghost" size="icon" onClick={handleCancelClick}>
             <X className="h-5 w-5" />
           </Button>
           <div className="flex-1">

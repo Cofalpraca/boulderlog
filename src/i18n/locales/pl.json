@@ -243,7 +243,15 @@
     "betaObservations": "Beta, obserwacje...",
     "cannotEndEmpty": "Nie można zakończyć pustej sesji",
     "addAtLeastOneBoulder": "Dodaj co najmniej jeden boulder przed zakończeniem sesji.",
-    "addAtLeastOneExercise": "Dodaj co najmniej jedno ćwiczenie z ukończonymi seriami."
+    "addAtLeastOneExercise": "Dodaj co najmniej jedno ćwiczenie z ukończonymi seriami.",
+    "activeSessionFound": "Znaleziono aktywną sesję",
+    "activeSessionDesc": "Masz niedokończoną sesję treningową. Czy chcesz kontynuować od miejsca, w którym skończyłeś?",
+    "continueSession": "Kontynuuj sesję",
+    "discardSession": "Odrzuć",
+    "leaveSessionTitle": "Opuścić sesję treningową?",
+    "leaveSessionDesc": "Masz niezapisane postępy. Jeśli teraz wyjdziesz, dane sesji mogą zostać utracone.",
+    "keepTraining": "Kontynuuj trening",
+    "discardAndLeave": "Odrzuć i wyjdź"
   },
   "settings": {
     "title": "Ustawienia",
