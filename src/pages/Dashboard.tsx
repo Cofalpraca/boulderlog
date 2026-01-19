@@ -11,6 +11,7 @@ import { startOfWeek, format } from 'date-fns';
 import { getMaxGrade } from '@/lib/analytics';
 import { PendingSyncCard } from '@/components/PendingSyncCard';
 import logo from '@/assets/logo-user.png';
+
 export default function Dashboard() {
   const {
     user,
