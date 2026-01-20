@@ -21,6 +21,8 @@ import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 import { computeSessionZones } from '@/lib/analytics';
+import { logError } from '@/lib/errorLogger';
+import { updateWeeklyAggregate } from '@/lib/sessionAggregates';
 
 type BoulderLog = Database['public']['Tables']['boulder_logs']['Row'];
 type GradeMapping = Database['public']['Tables']['gym_grade_mappings']['Row'];
@@ -394,9 +396,10 @@ export default function BoulderSession() {
           await supabase.from('boulder_logs').insert(logsToInsert);
         }
 
-        // Update session metadata
+        // Update session metadata with status='completed'
         await supabase.from('sessions').update({
           date_end: new Date().toISOString(),
+          status: 'completed', // Mark as completed for Session History
           notes: sessionNotes || null,
           rpe,
           finger_fatigue: fingerFatigue,
@@ -407,7 +410,6 @@ export default function BoulderSession() {
         }).eq('id', sessionId);
 
         // Compute and save zone summary
-        // Analytics will count rows (each row = 1 boulder)
         const zonesInput = logsToSave.map(l => ({ grade_raw: l.grade_raw, count: 1 }));
         const zones = computeSessionZones(zonesInput, activeGradeMappings, user.id);
         
@@ -417,6 +419,16 @@ export default function BoulderSession() {
           comfort_pct: zones.comfort_pct,
           growth_pct: zones.growth_pct,
           limit_pct: zones.limit_pct,
+        });
+
+        // Update weekly aggregates for performance
+        await updateWeeklyAggregate({
+          sessionId,
+          userId: user.id,
+          sessionType: 'on_wall',
+          dateStart: session?.date_start || new Date().toISOString(),
+          boulderCount: totalBoulders,
+          hasPain: painFlag,
         });
 
         await queryClient.invalidateQueries({ queryKey: ['sessions'] });
@@ -429,6 +441,7 @@ export default function BoulderSession() {
       }
     } catch (error) {
       console.error('Error saving session:', error);
+      logError('session_finish', 'Failed to save boulder session', { error, userId: user?.id });
       toast({ 
         title: 'Error', 
         description: 'Failed to save session', 

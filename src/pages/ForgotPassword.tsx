@@ -81,7 +81,7 @@ export default function ForgotPassword() {
             <p className="text-xs text-muted-foreground text-center">
               {t('auth.checkSpam')}
             </p>
-            <Button variant="outline" className="w-full" onClick={() => navigate('/auth')}>
+            <Button variant="outline" className="w-full" onClick={() => navigate('/login')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t('auth.backToLogin')}
             </Button>
@@ -115,7 +115,7 @@ export default function ForgotPassword() {
             </Button>
           </form>
           <div className="mt-4 text-center">
-            <button type="button" onClick={() => navigate('/auth')} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <button type="button" onClick={() => navigate('/login')} className="text-sm text-muted-foreground hover:text-primary transition-colors">
               <ArrowLeft className="inline mr-1 h-3 w-3" />
               {t('auth.backToLogin')}
             </button>

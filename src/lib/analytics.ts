@@ -1,5 +1,5 @@
 import type { Database } from '@/integrations/supabase/types';
-import { mappingToVScore, DEFAULT_FONT_TO_V } from '@/lib/userLevel';
+import { mappingToVScore, DEFAULT_FONT_TO_V, buildGradeLookup, fontGradeToVScore, getVScaleIndex as getVScaleIndexFromUserLevel } from '@/lib/userLevel';
 
 type GradeMapping = Database['public']['Tables']['gym_grade_mappings']['Row'];
 type BoulderLog = { grade_raw: string; count: number };
@@ -55,77 +55,132 @@ export function getMappingDifficulty(mapping: GradeMapping): number {
 }
 
 /**
+ * Normalize a raw grade to a V-score using:
+ * 1. Gym mappings (for color/numeric labels)
+ * 2. Direct V-Scale grades (V0, V1, etc.)
+ * 3. Font grades via DEFAULT_FONT_TO_V
+ * 
+ * Returns -1 if unmappable.
+ */
+function gradeToVScore(gradeRaw: string, mappings: GradeMapping[]): number {
+  // First, try gym-specific mapping lookup
+  for (const mapping of mappings) {
+    if (mapping.label === gradeRaw) {
+      return mappingToVScore(mapping);
+    }
+  }
+  
+  // Try direct V-Scale grade (e.g., "V5")
+  const vIdx = getVScaleIndexFromUserLevel(gradeRaw);
+  if (vIdx >= 0) return vIdx;
+  
+  // Try Font grade via canonical table
+  const fontScore = fontGradeToVScore(gradeRaw);
+  if (fontScore >= 0) return fontScore;
+  
+  return -1;
+}
+
+/**
  * Compute development zones for a session
  * 
- * Zone classification based on ABSOLUTE difficulty thresholds:
- * - Comfort: bottom 40% of the grade scale (easy warmup/volume)
- * - Growth: middle 40% of the grade scale (training stimulus)
- * - Limit: top 20% of the grade scale (max attempts/projects)
+ * Zone classification is USER-BASELINE-RELATIVE:
+ * - Comfort: V-score significantly below user's baseline (≥3 grades below)
+ * - Growth: V-score around user's baseline (within 2 grades)
+ * - Limit: V-score at or above user's baseline (within 1 grade above or higher)
  * 
- * Uses absolute thresholds based on available grade mappings rather than
- * session-relative ranges. This ensures consistent classification regardless
- * of which grades are climbed in a single session.
+ * The baseline is computed as the AVERAGE V-score of logged boulders in this session.
+ * This creates adaptive zones that match the user's current climbing ability.
+ * 
+ * DEV-ONLY: Logs detailed debug information to help diagnose zone distribution.
  */
 export function computeSessionZones(
   logs: BoulderLog[],
   mappings: GradeMapping[],
-  userId: string
+  userId: string,
+  userBaseline?: number // Optional: pre-computed user baseline V-score
 ): { comfort_pct: number; growth_pct: number; limit_pct: number } {
-  if (!logs.length || !mappings.length) {
+  if (!logs.length) {
     return { comfort_pct: 0, growth_pct: 0, limit_pct: 0 };
   }
 
-  // Calculate difficulty for each grade mapping
-  const sortedMappings = [...mappings].sort((a, b) => 
-    getMappingDifficulty(a) - getMappingDifficulty(b)
-  );
+  // Normalize all logged boulders to V-scores
+  const boulderScores: { grade: string; vScore: number; count: number }[] = [];
+  let unmappedCount = 0;
   
-  const mappingDifficulty = new Map<string, number>();
-  mappings.forEach(m => {
-    mappingDifficulty.set(m.label, getMappingDifficulty(m));
-  });
-
-  // Get the full difficulty range from the gym's grade mappings
-  const minGymDifficulty = getMappingDifficulty(sortedMappings[0]);
-  const maxGymDifficulty = getMappingDifficulty(sortedMappings[sortedMappings.length - 1]);
-  const gymRange = maxGymDifficulty - minGymDifficulty;
-
-  // Define absolute zone thresholds based on gym's grade range
-  // Comfort: bottom 40%, Growth: middle 40%, Limit: top 20%
-  const comfortThreshold = minGymDifficulty + gymRange * 0.4;
-  const growthThreshold = minGymDifficulty + gymRange * 0.8;
-
-  // Get difficulties of logged boulders
-  const loggedDifficulties: number[] = [];
-  logs.forEach(log => {
-    const difficulty = mappingDifficulty.get(log.grade_raw);
-    if (difficulty !== undefined) {
-      for (let i = 0; i < log.count; i++) {
-        loggedDifficulties.push(difficulty);
+  for (const log of logs) {
+    const vScore = gradeToVScore(log.grade_raw, mappings);
+    if (vScore >= 0) {
+      boulderScores.push({ grade: log.grade_raw, vScore, count: log.count });
+    } else {
+      unmappedCount += log.count;
+      if (import.meta.env.DEV) {
+        console.debug(`[zones] Unmapped grade: "${log.grade_raw}"`);
       }
     }
-  });
+  }
 
-  if (loggedDifficulties.length === 0) {
+  if (boulderScores.length === 0) {
+    if (import.meta.env.DEV) {
+      console.debug(`[zones] No mapped boulders (${unmappedCount} unmapped)`);
+    }
     return { comfort_pct: 0, growth_pct: 0, limit_pct: 0 };
   }
 
-  // Count boulders in each zone based on absolute thresholds
+  // Compute baseline: average V-score of all logged boulders (weighted by count)
+  // If a pre-computed baseline is provided, use that instead
+  let baseline = userBaseline;
+  if (baseline === undefined) {
+    let totalScore = 0;
+    let totalCount = 0;
+    for (const b of boulderScores) {
+      totalScore += b.vScore * b.count;
+      totalCount += b.count;
+    }
+    baseline = totalScore / totalCount;
+  }
+
+  // Define zone thresholds relative to user baseline
+  // Comfort: significantly easier (≥3 V-grades below baseline)
+  // Growth: training zone (within ~2 grades of baseline)
+  // Limit: hard/project zone (≥1 grade above baseline)
+  const comfortThreshold = baseline - 2; // Below this = Comfort
+  const limitThreshold = baseline + 1;    // Above this = Limit
+  // Between comfortThreshold and limitThreshold = Growth
+
+  // Count boulders in each zone
   let comfort = 0;
   let growth = 0;
   let limit = 0;
 
-  loggedDifficulties.forEach(d => {
-    if (d <= comfortThreshold) {
-      comfort++;
-    } else if (d <= growthThreshold) {
-      growth++;
-    } else {
-      limit++;
-    }
-  });
+  if (import.meta.env.DEV) {
+    console.debug(`[zones] Baseline: ${baseline.toFixed(2)} (V${Math.round(baseline)})`);
+    console.debug(`[zones] Thresholds: Comfort < ${comfortThreshold.toFixed(1)}, Growth ${comfortThreshold.toFixed(1)}-${limitThreshold.toFixed(1)}, Limit > ${limitThreshold.toFixed(1)}`);
+  }
 
-  const total = loggedDifficulties.length;
+  for (const b of boulderScores) {
+    let zone: string;
+    if (b.vScore < comfortThreshold) {
+      comfort += b.count;
+      zone = 'COMFORT';
+    } else if (b.vScore > limitThreshold) {
+      limit += b.count;
+      zone = 'LIMIT';
+    } else {
+      growth += b.count;
+      zone = 'GROWTH';
+    }
+    
+    if (import.meta.env.DEV) {
+      console.debug(`[zones] ${b.grade} → V${b.vScore.toFixed(1)} × ${b.count} → ${zone}`);
+    }
+  }
+
+  const total = comfort + growth + limit;
+  
+  if (import.meta.env.DEV) {
+    console.debug(`[zones] Distribution: Comfort=${comfort}, Growth=${growth}, Limit=${limit} (total=${total}, unmapped=${unmappedCount})`);
+  }
   
   return {
     comfort_pct: Math.round((comfort / total) * 100),

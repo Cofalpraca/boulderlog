@@ -50,8 +50,8 @@ describe('Grade Normalization', () => {
   describe('getFontIndex', () => {
     it('returns correct index for Font grades', () => {
       expect(getFontIndex('4')).toBe(0);
-      expect(getFontIndex('6a')).toBe(4);
-      expect(getFontIndex('7a')).toBe(10);
+      expect(getFontIndex('6a')).toBe(7);  // Correct index in FONT_ORDER
+      expect(getFontIndex('7a')).toBe(13); // Correct index in FONT_ORDER
     });
 
     it('returns -1 for invalid grades', () => {
@@ -98,24 +98,52 @@ describe('Development Zones', () => {
       expect(result).toEqual({ comfort_pct: 0, growth_pct: 0, limit_pct: 0 });
     });
 
-    it('returns zeros for empty mappings', () => {
-      const logs = [{ grade_raw: 'Yellow', count: 5 }];
+    it('returns zeros for empty mappings with unmappable grades', () => {
+      const logs = [{ grade_raw: 'UnknownGrade', count: 5 }];
       const result = computeSessionZones(logs, [], 'user-1');
       expect(result).toEqual({ comfort_pct: 0, growth_pct: 0, limit_pct: 0 });
     });
 
-    it('correctly classifies single-grade session as comfort', () => {
-      const logs = [{ grade_raw: 'Yellow', count: 10 }];
-      const result = computeSessionZones(logs, mockMappings, 'user-1');
-      expect(result.comfort_pct).toBe(100);
-      expect(result.growth_pct).toBe(0);
-      expect(result.limit_pct).toBe(0);
+    it('classifies Font grades correctly using canonical table', () => {
+      // Font grades should work even without gym mappings via DEFAULT_FONT_TO_V
+      // Use a wider spread to guarantee comfort/limit zones
+      const logs = [
+        { grade_raw: '5a', count: 5 },   // V1 - well below baseline → Comfort
+        { grade_raw: '6b', count: 5 },   // V5 - around baseline → Growth
+        { grade_raw: '7b', count: 5 },   // V9 - above baseline → Limit
+      ];
+      // Baseline ≈ (1*5 + 5*5 + 9*5) / 15 = 75/15 = 5
+      // Comfort < 3, Growth 3-6, Limit > 6
+      const result = computeSessionZones(logs, [], 'user-1');
+      
+      // All three zones should have some percentage
+      expect(result.comfort_pct).toBeGreaterThan(0);
+      expect(result.growth_pct).toBeGreaterThan(0);
+      expect(result.limit_pct).toBeGreaterThan(0);
     });
 
-    it('correctly classifies high-grade session as limit', () => {
-      const logs = [{ grade_raw: 'Black', count: 5 }];
-      const result = computeSessionZones(logs, mockMappings, 'user-1');
-      expect(result.limit_pct).toBe(100);
+    it('does NOT collapse all grades into Growth for mixed dataset', () => {
+      // This is the regression test: with grades from 6a to 7a+
+      // zones should distribute, not all be Growth
+      const logs = [
+        { grade_raw: '7a+', count: 9 },  // V8
+        { grade_raw: '7a', count: 1 },   // V7
+        { grade_raw: '6c+', count: 1 },  // V6
+        { grade_raw: '6c', count: 1 },   // V6
+        { grade_raw: '6b+', count: 10 }, // V5
+        { grade_raw: '6a', count: 10 },  // V3
+      ];
+      const result = computeSessionZones(logs, [], 'user-1');
+      
+      // Should NOT be 100% Growth
+      expect(result.growth_pct).toBeLessThan(100);
+      
+      // With this spread, comfort and limit should have values
+      // Baseline ≈ V5.9 (weighted average)
+      // 6a (V3) is 2.9 below baseline → Comfort
+      // 7a+ (V8) is 2.1 above baseline → Limit
+      expect(result.comfort_pct).toBeGreaterThan(0);
+      expect(result.limit_pct).toBeGreaterThan(0);
     });
 
     it('percentages sum to 100 for mixed sessions', () => {
@@ -131,18 +159,31 @@ describe('Development Zones', () => {
       expect(sum).toBe(100);
     });
 
-    it('distributes zones correctly for diverse session', () => {
+    it('uses provided baseline for zone thresholds', () => {
+      // With explicit baseline of V5, grades below V3 are Comfort, above V6 are Limit
       const logs = [
-        { grade_raw: 'Yellow', count: 5 }, // Comfort zone (lowest)
-        { grade_raw: 'Blue', count: 5 },   // Growth zone (middle)
-        { grade_raw: 'Black', count: 5 },  // Limit zone (highest)
+        { grade_raw: 'Yellow', count: 5 },  // V0.5 - well below baseline → Comfort
+        { grade_raw: 'Blue', count: 5 },    // V4.5 - around baseline → Growth
+        { grade_raw: 'Black', count: 5 },   // V9 - above baseline → Limit
       ];
-      const result = computeSessionZones(logs, mockMappings, 'user-1');
+      const result = computeSessionZones(logs, mockMappings, 'user-1', 5); // baseline = V5
       
-      // Each zone should have approximately 33%
       expect(result.comfort_pct).toBeGreaterThan(25);
       expect(result.growth_pct).toBeGreaterThan(25);
       expect(result.limit_pct).toBeGreaterThan(25);
+    });
+
+    it('respects user baseline for relative zone classification', () => {
+      // Same grades, different baseline → different zones
+      const logs = [{ grade_raw: 'Blue', count: 10 }]; // V4.5
+      
+      // High baseline (V8): Blue is well below → Comfort
+      const highResult = computeSessionZones(logs, mockMappings, 'user-1', 8);
+      expect(highResult.comfort_pct).toBe(100);
+      
+      // Low baseline (V2): Blue is above → Limit
+      const lowResult = computeSessionZones(logs, mockMappings, 'user-1', 2);
+      expect(lowResult.limit_pct).toBe(100);
     });
   });
 });

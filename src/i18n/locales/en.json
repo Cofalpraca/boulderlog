@@ -551,5 +551,20 @@
       "custom": "Custom",
       "customDesc": "Define your own"
     }
+  },
+  "mappingHealth": {
+    "title": "Mapping Health",
+    "overallHealth": "Overall Health",
+    "allGood": "All grades are normalizable. Analytics will be accurate.",
+    "issuesFound": "{{count}} gym(s) have mapping issues that may affect analytics.",
+    "topUnmapped": "Top unmapped grades:",
+    "noData": "No climbing data in the last 90 days",
+    "startSession": "Start a bouldering session to see mapping health.",
+    "startSessionBtn": "Start Session",
+    "issues": "Issues",
+    "healthy": "Healthy",
+    "stats": "{{total}} boulders: {{good}} normalizable, {{bad}} unmapped",
+    "unmappedGrades": "Unmapped:",
+    "fix": "Fix"
   }
 }

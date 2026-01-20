@@ -468,6 +468,7 @@ export type Database = {
           pain_note: string | null
           rpe: number | null
           session_type: Database["public"]["Enums"]["session_type"]
+          status: string | null
           subtype: string | null
           updated_at: string
           user_id: string
@@ -485,6 +486,7 @@ export type Database = {
           pain_note?: string | null
           rpe?: number | null
           session_type: Database["public"]["Enums"]["session_type"]
+          status?: string | null
           subtype?: string | null
           updated_at?: string
           user_id: string
@@ -502,6 +504,7 @@ export type Database = {
           pain_note?: string | null
           rpe?: number | null
           session_type?: Database["public"]["Enums"]["session_type"]
+          status?: string | null
           subtype?: string | null
           updated_at?: string
           user_id?: string
@@ -596,6 +599,48 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_aggregates: {
+        Row: {
+          created_at: string
+          has_pain: boolean | null
+          id: string
+          max_grade_raw: string | null
+          off_wall_sessions: number | null
+          on_wall_sessions: number | null
+          total_boulders: number | null
+          total_sets: number | null
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          has_pain?: boolean | null
+          id?: string
+          max_grade_raw?: string | null
+          off_wall_sessions?: number | null
+          on_wall_sessions?: number | null
+          total_boulders?: number | null
+          total_sets?: number | null
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          has_pain?: boolean | null
+          id?: string
+          max_grade_raw?: string | null
+          off_wall_sessions?: number | null
+          on_wall_sessions?: number | null
+          total_boulders?: number | null
+          total_sets?: number | null
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       weekly_plans: {
         Row: {
           created_at: string
@@ -633,6 +678,7 @@ export type Database = {
     Enums: {
       exercise_category: "fingers" | "strength" | "core" | "mobility"
       grading_type: "font" | "v_scale" | "colors" | "numeric"
+      session_status: "draft" | "active" | "completed" | "discarded"
       session_type: "on_wall" | "off_wall"
       template_type: "on_wall" | "off_wall"
     }
@@ -764,6 +810,7 @@ export const Constants = {
     Enums: {
       exercise_category: ["fingers", "strength", "core", "mobility"],
       grading_type: ["font", "v_scale", "colors", "numeric"],
+      session_status: ["draft", "active", "completed", "discarded"],
       session_type: ["on_wall", "off_wall"],
       template_type: ["on_wall", "off_wall"],
     },

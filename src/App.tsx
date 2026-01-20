@@ -9,8 +9,10 @@ import { ActiveSessionProvider } from "@/contexts/ActiveSessionContext";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { ActiveSessionGuard } from "@/components/ActiveSessionGuard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Dashboard from "@/pages/Dashboard";
-import Auth from "@/pages/Auth";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
 import Onboarding from "@/pages/Onboarding";
 import Gyms from "@/pages/Gyms";
@@ -26,6 +28,7 @@ import SessionHistory from "@/pages/SessionHistory";
 import Analytics from "@/pages/Analytics";
 import Settings from "@/pages/Settings";
 import AuthReset from "@/pages/AuthReset";
+import MappingHealth from "@/pages/MappingHealth";
 import NotFound from "@/pages/NotFound";
 import { Loader2 } from "lucide-react";
 import "@/i18n";
@@ -48,7 +51,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <LoadingScreen />;
   }
   
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   
   // Redirect to onboarding if not complete
   if (!isComplete) return <Navigate to="/onboarding" replace />;
@@ -64,7 +67,7 @@ function OnboardingRoute({ children }: { children: React.ReactNode }) {
     return <LoadingScreen />;
   }
   
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   
   // If onboarding is complete, redirect to dashboard
   if (isComplete) return <Navigate to="/" replace />;
@@ -76,7 +79,9 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/auth" element={<Auth />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/auth" element={<Navigate to="/login" replace />} />
       <Route path="/auth/reset" element={<AuthReset />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       
@@ -97,6 +102,7 @@ function AppRoutes() {
       <Route path="/history" element={<ProtectedRoute><SessionHistory /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/mapping-health" element={<ProtectedRoute><MappingHealth /></ProtectedRoute>} />
       
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
@@ -105,23 +111,25 @@ function AppRoutes() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <ActiveSessionProvider>
-              <AppRoutes />
-              <ActiveSessionGuard />
-              <OfflineIndicator />
-            </ActiveSessionProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <ActiveSessionProvider>
+                <AppRoutes />
+                <ActiveSessionGuard />
+                <OfflineIndicator />
+              </ActiveSessionProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

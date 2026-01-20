@@ -82,7 +82,7 @@ export default function SessionHistory() {
     pain_flag: false,
   });
 
-  // Fetch sessions
+  // Fetch sessions - ONLY completed sessions (Single Source of Truth for History)
   const { data: sessions, isLoading } = useQuery({
     queryKey: ['session_history', user?.id, sessionType, timeRange],
     queryFn: async () => {
@@ -102,6 +102,8 @@ export default function SessionHistory() {
         `)
         .eq('user_id', user!.id)
         .gte('date_start', dateFilter.toISOString())
+        // Session History = ONLY completed sessions (status='completed' with date_end NOT NULL)
+        .eq('status', 'completed')
         .not('date_end', 'is', null)
         .order('date_start', { ascending: false });
 
