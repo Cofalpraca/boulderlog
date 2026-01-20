@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useActiveSession } from '@/contexts/ActiveSessionContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,16 +14,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Mountain, Dumbbell } from 'lucide-react';
+import { Mountain, Dumbbell, Loader2 } from 'lucide-react';
 
 export function ActiveSessionGuard() {
   const { t } = useTranslation();
   const { activeSession, restoreSession, clearActiveSession } = useActiveSession();
+  const { deletePendingSession } = useOfflineStorage();
   const location = useLocation();
   const navigate = useNavigate();
   const [showDialog, setShowDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [hasShownRestore, setHasShownRestore] = useState(false);
+  const [isDiscarding, setIsDiscarding] = useState(false);
 
   // Session route patterns
   const isSessionRoute = location.pathname.includes('/session/') && 
@@ -55,19 +59,58 @@ export function ActiveSessionGuard() {
     restoreSession();
   };
 
-  const handleDiscardSession = () => {
-    setShowDialog(false);
-    clearActiveSession();
-    if (pendingNavigation) {
-      navigate(pendingNavigation);
-      setPendingNavigation(null);
+  const handleDiscardSession = async () => {
+    if (!activeSession) {
+      setShowDialog(false);
+      return;
+    }
+
+    setIsDiscarding(true);
+
+    try {
+      const sessionId = activeSession.sessionId;
+      const isOfflineSession = sessionId.startsWith('offline-');
+
+      if (isOfflineSession) {
+        // Delete offline session from IndexedDB
+        const offlineTempId = sessionId.replace('offline-', '');
+        await deletePendingSession(offlineTempId);
+      } else {
+        // Delete online session from Supabase (including cascading boulder_logs, etc.)
+        await supabase.from('boulder_logs').delete().eq('session_id', sessionId);
+        await supabase.from('session_gyms').delete().eq('session_id', sessionId);
+        await supabase.from('session_zone_summaries').delete().eq('session_id', sessionId);
+        await supabase.from('session_items').delete().eq('session_id', sessionId);
+        await supabase.from('sessions').delete().eq('id', sessionId);
+      }
+
+      // Clear local session persistence (localStorage)
+      const sessionStateKey = `boulderlog_session_state_${sessionId}`;
+      localStorage.removeItem(sessionStateKey);
+
+      // Clear active session context
+      clearActiveSession();
+
+      setShowDialog(false);
+
+      if (pendingNavigation) {
+        navigate(pendingNavigation);
+        setPendingNavigation(null);
+      }
+    } catch (error) {
+      console.error('Failed to discard session:', error);
+      // Still clear the active session state to prevent being stuck
+      clearActiveSession();
+      setShowDialog(false);
+    } finally {
+      setIsDiscarding(false);
     }
   };
 
   if (!activeSession) return null;
 
   return (
-    <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
+    <AlertDialog open={showDialog} onOpenChange={(open) => !isDiscarding && setShowDialog(open)}>
       <AlertDialogContent className="glass">
         <AlertDialogHeader>
           <div className="flex items-center gap-3 mb-2">
@@ -90,10 +133,17 @@ export function ActiveSessionGuard() {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleDiscardSession}>
-            {t('session.discardSession')}
+          <AlertDialogCancel onClick={handleDiscardSession} disabled={isDiscarding}>
+            {isDiscarding ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('common.discarding', 'Discarding...')}
+              </>
+            ) : (
+              t('session.discardSession')
+            )}
           </AlertDialogCancel>
-          <AlertDialogAction onClick={handleContinueSession}>
+          <AlertDialogAction onClick={handleContinueSession} disabled={isDiscarding}>
             {t('session.continueSession')}
           </AlertDialogAction>
         </AlertDialogFooter>
