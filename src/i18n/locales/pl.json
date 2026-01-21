@@ -40,7 +40,9 @@
     "set": "Seria",
     "reps": "Powtórzenia",
     "weight": "Ciężar",
-    "exercises": "Ćwiczenia"
+    "exercises": "Ćwiczenia",
+    "errorLoadingData": "Błąd ładowania danych",
+    "retry": "Ponów"
   },
   "auth": {
     "signIn": "Zaloguj się",
@@ -301,7 +303,40 @@
     "leaveSessionTitle": "Opuścić sesję treningową?",
     "leaveSessionDesc": "Masz niezapisane postępy. Jeśli teraz wyjdziesz, dane sesji mogą zostać utracone.",
     "keepTraining": "Kontynuuj trening",
-    "discardAndLeave": "Odrzuć i wyjdź"
+    "discardAndLeave": "Odrzuć i wyjdź",
+    "failedAttempts": "Nieudane próby",
+    "flashCounter": "Flashe",
+    "flashes": "Flashe"
+  },
+  "import": {
+    "noGyms": "Brak skonfigurowanych siłowni",
+    "addGymFirst": "Dodaj siłownię przed importem historii boulderów.",
+    "selectGym": "Wybierz siłownię",
+    "chooseGym": "Wybierz siłownię...",
+    "formatTitle": "Format danych",
+    "formatDesc": "Jedna linia na sesję. Najpierw data, potem wpisy (ilość×stopień).",
+    "pasteData": "Wklej historię boulderów",
+    "placeholder": "10.01.2025, 2x6a, 3x6b, 1x6c+\n12.01.2025, 5x6a, 2x6b+",
+    "preview": "Podgląd importu",
+    "previewTitle": "Podgląd importu",
+    "sessions": "Sesje",
+    "boulders": "Bouldery",
+    "dateRange": "Od {{from}} do {{to}}",
+    "errors": "{{count}} linia(e) z błędami",
+    "errorsDesc": "Te linie zostaną pominięte. Poprawne linie zostaną zaimportowane.",
+    "line": "Linia",
+    "unmappedWarning": "Niezmapowane stopnie",
+    "unmappedDesc": "Te stopnie nie są w mapowaniu siłowni. Zostaną zapisane, ale nie wpłyną na analitykę do zmapowania.",
+    "confirmImport": "Importuj {{count}} sesji",
+    "importing": "Importowanie sesji...",
+    "complete": "Import zakończony!",
+    "importMore": "Importuj więcej",
+    "success": "Import udany",
+    "successDesc": "Utworzono {{sessions}} sesji z {{boulders}} boulderami.",
+    "successHint": "Użyj filtra 'Cały czas' w Historii sesji, aby zobaczyć starsze sesje.",
+    "failed": "Import nie powiódł się. Spróbuj ponownie.",
+    "importedNote": "Zaimportowano: {{date}}",
+    "importedBadge": "Zaimportowano"
   },
   "settings": {
     "title": "Ustawienia",
@@ -333,7 +368,10 @@
     "themeSystem": "Systemowy",
     "languageDesc": "Wybierz preferowany język.",
     "english": "English",
-    "polish": "Polski"
+    "polish": "Polski",
+    "import": "Import",
+    "importHistory": "Import historii boulderów",
+    "importHistoryDesc": "Importuj historię sesji On-wall z formatu tekstowego."
   },
   "onboarding": {
     "welcome": "Witaj w BoulderLog",
@@ -391,7 +429,9 @@
     "deleteSession": "Usunąć sesję?",
     "deleteSessionDesc": "To trwale usunie tę sesję i wszystkie jej logi. Tej akcji nie można cofnąć.",
     "sessionDeleted": "Sesja usunięta pomyślnie",
-    "sessionUpdated": "Sesja zaktualizowana pomyślnie"
+    "sessionUpdated": "Sesja zaktualizowana pomyślnie",
+    "showing": "Pokazuję",
+    "of": "z"
   },
   "plan": {
     "title": "Plan tygodniowy",
@@ -406,6 +446,7 @@
     "focusAreas": "Obszary skupienia, cele...",
     "sessionPlanned": "Sesja zaplanowana!",
     "sessionRemoved": "Sesja usunięta",
+    "cannotPlanPast": "Nie można planować sesji w przeszłości.",
     "selectGym": "Wybierz siłownię (opcjonalnie)",
     "noGym": "Bez siłowni",
     "gymRecommended": "Zalecane dla sesji On-wall"
@@ -551,5 +592,30 @@
       "custom": "Własny",
       "customDesc": "Zdefiniuj własny"
     }
+  },
+  "mappingHealth": {
+    "title": "Stan mapowań",
+    "summaryHeader": "Analizuję {{active}} z {{total}} siłowni z danymi",
+    "gymsWithoutData": "Siłownie bez danych",
+    "noRecentDataDesc": "Brak danych wspinaczkowych z ostatnich 90 dni",
+    "startSessionAtGym": "Rozpocznij sesję",
+    "overallHealth": "Stan ogólny",
+    "allGood": "Wszystkie stopnie są normalizowalne. Analityka będzie dokładna.",
+    "issuesFound": "{{count}} siłowni ma problemy z mapowaniami, które mogą wpłynąć na analitykę.",
+    "topUnmapped": "Najczęściej niezmapowane stopnie:",
+    "noData": "Brak danych wspinaczkowych z ostatnich 90 dni",
+    "noGyms": "Brak skonfigurowanych siłowni",
+    "addGymFirst": "Dodaj siłownię, aby rozpocząć śledzenie sesji wspinaczkowych.",
+    "noBouldersLogged": "Brak zarejestrowanych boulderów w ostatnich sesjach",
+    "logBoulders": "Zarejestruj bouldery podczas sesji, aby zobaczyć stan mapowań.",
+    "errorMessage": "Nie udało się pobrać danych o stanie mapowań. Spróbuj ponownie.",
+    "loadingTimeout": "Ładowanie trwa dłużej niż zwykle. Spróbuj ponownie.",
+    "startSession": "Rozpocznij sesję boulderową, aby zobaczyć stan mapowań.",
+    "startSessionBtn": "Rozpocznij sesję",
+    "issues": "Problemy",
+    "healthy": "Zdrowe",
+    "stats": "{{total}} boulderów: {{good}} normalizowalnych, {{bad}} niezmapowanych",
+    "unmappedGrades": "Niezmapowane:",
+    "fix": "Napraw"
   }
 }

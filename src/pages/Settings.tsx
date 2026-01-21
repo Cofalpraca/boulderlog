@@ -11,8 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Shield, Loader2, Check, MapPin, Mail, Lock, Palette, Globe, Sun, Moon, Monitor } from 'lucide-react';
+import { ArrowLeft, User, Shield, Loader2, Check, MapPin, Mail, Lock, Palette, Globe, Sun, Moon, Monitor, Activity, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ImportBoulderHistory } from '@/components/ImportBoulderHistory';
 import type { Database } from '@/integrations/supabase/types';
 
 // NOTE: preferred_grade is deprecated - user level is now computed automatically from boulder logs
@@ -153,18 +154,22 @@ export default function Settings() {
 
       <main className="container px-4 py-6 max-w-lg mx-auto">
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="profile" className="flex items-center gap-1 text-xs sm:text-sm">
               <User className="h-4 w-4" />
-              {t('settings.profile')}
+              <span className="hidden sm:inline">{t('settings.profile')}</span>
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <TabsTrigger value="import" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('settings.import')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="flex items-center gap-1 text-xs sm:text-sm">
               <Palette className="h-4 w-4" />
-              {t('settings.appearance')}
+              <span className="hidden sm:inline">{t('settings.appearance')}</span>
             </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2">
+            <TabsTrigger value="security" className="flex items-center gap-1 text-xs sm:text-sm">
               <Shield className="h-4 w-4" />
-              {t('settings.security')}
+              <span className="hidden sm:inline">{t('settings.security')}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -208,13 +213,35 @@ export default function Settings() {
                 </CardTitle>
                 <CardDescription>{t('settings.gymConfigurationDesc')}</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-2">
                 <Link to="/gyms">
                   <Button variant="outline" className="w-full">
                     <MapPin className="mr-2 h-4 w-4" />
                     {t('settings.manageGyms')}
                   </Button>
                 </Link>
+                <Link to="/mapping-health">
+                  <Button variant="outline" className="w-full">
+                    <Activity className="mr-2 h-4 w-4" />
+                    {t('mappingHealth.title')}
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Import Tab */}
+          <TabsContent value="import" className="space-y-4">
+            <Card className="glass">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Upload className="h-5 w-5 text-primary" />
+                  {t('settings.importHistory')}
+                </CardTitle>
+                <CardDescription>{t('settings.importHistoryDesc')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ImportBoulderHistory />
               </CardContent>
             </Card>
           </TabsContent>

@@ -11,6 +11,8 @@ interface SessionState {
   rpe?: number;
   fingerFatigue?: number;
   painFlag?: boolean;
+  failedAttempts?: number;
+  flashCount?: number;
   lastUpdated: number;
 }
 

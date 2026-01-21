@@ -459,7 +459,9 @@ export type Database = {
           created_at: string
           date_end: string | null
           date_start: string
+          failed_attempts: number | null
           finger_fatigue: number | null
+          flash_count: number | null
           id: string
           notes: string | null
           pain_area: string | null
@@ -477,7 +479,9 @@ export type Database = {
           created_at?: string
           date_end?: string | null
           date_start?: string
+          failed_attempts?: number | null
           finger_fatigue?: number | null
+          flash_count?: number | null
           id?: string
           notes?: string | null
           pain_area?: string | null
@@ -495,7 +499,9 @@ export type Database = {
           created_at?: string
           date_end?: string | null
           date_start?: string
+          failed_attempts?: number | null
           finger_fatigue?: number | null
+          flash_count?: number | null
           id?: string
           notes?: string | null
           pain_area?: string | null
@@ -596,6 +602,57 @@ export type Database = {
           template_type?: Database["public"]["Enums"]["template_type"]
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_level_cache: {
+        Row: {
+          boulders_used: number | null
+          computed_at: string | null
+          created_at: string
+          id: string
+          level_font_grade: string | null
+          level_score: number | null
+          level_v_grade: string | null
+          max_font_grade: string | null
+          max_score: number | null
+          max_v_grade: string | null
+          total_boulders: number | null
+          updated_at: string
+          user_id: string
+          window_days: number | null
+        }
+        Insert: {
+          boulders_used?: number | null
+          computed_at?: string | null
+          created_at?: string
+          id?: string
+          level_font_grade?: string | null
+          level_score?: number | null
+          level_v_grade?: string | null
+          max_font_grade?: string | null
+          max_score?: number | null
+          max_v_grade?: string | null
+          total_boulders?: number | null
+          updated_at?: string
+          user_id: string
+          window_days?: number | null
+        }
+        Update: {
+          boulders_used?: number | null
+          computed_at?: string | null
+          created_at?: string
+          id?: string
+          level_font_grade?: string | null
+          level_score?: number | null
+          level_v_grade?: string | null
+          max_font_grade?: string | null
+          max_score?: number | null
+          max_v_grade?: string | null
+          total_boulders?: number | null
+          updated_at?: string
+          user_id?: string
+          window_days?: number | null
         }
         Relationships: []
       }
