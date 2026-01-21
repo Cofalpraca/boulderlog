@@ -84,13 +84,16 @@ function gradeToVScore(gradeRaw: string, mappings: GradeMapping[]): number {
 /**
  * Compute development zones for a session
  * 
- * Zone classification is USER-BASELINE-RELATIVE:
- * - Comfort: V-score significantly below user's baseline (≥3 grades below)
- * - Growth: V-score around user's baseline (within 2 grades)
- * - Limit: V-score at or above user's baseline (within 1 grade above or higher)
+ * Zone classification is USER-LEVEL-RELATIVE:
+ * - Comfort: Clearly below user's level, low stress (v_score ≤ userLevel - 1.0)
+ * - Growth: Drives adaptation, requires effort (userLevel - 1.0 < v_score ≤ userLevel + 1.0)
+ * - Limit: Maximal effort / project attempts (v_score > userLevel + 1.5)
  * 
- * The baseline is computed as the AVERAGE V-score of logged boulders in this session.
- * This creates adaptive zones that match the user's current climbing ability.
+ * The userLevel is the computed User Level (canonical V-score from top 20 boulders).
+ * This ensures zones reflect RELATIVE TRAINING EFFORT, not absolute grade counts.
+ * 
+ * IMPORTANT: If userLevel is not provided, we fall back to computing it from this session's data,
+ * which is less accurate but ensures we always produce a result.
  * 
  * DEV-ONLY: Logs detailed debug information to help diagnose zone distribution.
  */
@@ -98,7 +101,7 @@ export function computeSessionZones(
   logs: BoulderLog[],
   mappings: GradeMapping[],
   userId: string,
-  userBaseline?: number // Optional: pre-computed user baseline V-score
+  userLevel?: number // User Level V-score (from computeUserLevel or cache)
 ): { comfort_pct: number; growth_pct: number; limit_pct: number } {
   if (!logs.length) {
     return { comfort_pct: 0, growth_pct: 0, limit_pct: 0 };
@@ -127,26 +130,32 @@ export function computeSessionZones(
     return { comfort_pct: 0, growth_pct: 0, limit_pct: 0 };
   }
 
-  // Compute baseline: average V-score of all logged boulders (weighted by count)
-  // If a pre-computed baseline is provided, use that instead
-  let baseline = userBaseline;
-  if (baseline === undefined) {
-    let totalScore = 0;
-    let totalCount = 0;
+  // Use provided userLevel, or fall back to session max as approximation
+  // The fallback uses the MAX score in this session, which approximates user ability
+  let baseline = userLevel;
+  if (baseline === undefined || baseline < 0) {
+    // Fallback: use the MAX V-score from this session as user level approximation
+    // This is less accurate than the true user level but ensures reasonable zones
+    let maxScore = 0;
     for (const b of boulderScores) {
-      totalScore += b.vScore * b.count;
-      totalCount += b.count;
+      if (b.vScore > maxScore) {
+        maxScore = b.vScore;
+      }
     }
-    baseline = totalScore / totalCount;
+    baseline = maxScore;
+    
+    if (import.meta.env.DEV) {
+      console.debug(`[zones] No userLevel provided, using session max (V${maxScore}) as fallback`);
+    }
   }
 
-  // Define zone thresholds relative to user baseline
-  // Comfort: significantly easier (≥3 V-grades below baseline)
-  // Growth: training zone (within ~2 grades of baseline)
-  // Limit: hard/project zone (≥1 grade above baseline)
-  const comfortThreshold = baseline - 2; // Below this = Comfort
-  const limitThreshold = baseline + 1;    // Above this = Limit
-  // Between comfortThreshold and limitThreshold = Growth
+  // Define zone thresholds relative to User Level (canonical definition):
+  // - Comfort: v_score ≤ userLevel - 1.0 (clearly easier, low stress)
+  // - Growth: userLevel - 1.0 < v_score ≤ userLevel + 1.0 (training zone, ~40-50%)
+  // - Limit: v_score > userLevel + 1.5 (project zone, should be small %)
+  const comfortThreshold = baseline - 1.0;  // At or below = Comfort
+  const limitThreshold = baseline + 1.5;     // Above = Limit
+  // Between comfortThreshold (exclusive) and limitThreshold (inclusive) = Growth
 
   // Count boulders in each zone
   let comfort = 0;
@@ -154,13 +163,13 @@ export function computeSessionZones(
   let limit = 0;
 
   if (import.meta.env.DEV) {
-    console.debug(`[zones] Baseline: ${baseline.toFixed(2)} (V${Math.round(baseline)})`);
-    console.debug(`[zones] Thresholds: Comfort < ${comfortThreshold.toFixed(1)}, Growth ${comfortThreshold.toFixed(1)}-${limitThreshold.toFixed(1)}, Limit > ${limitThreshold.toFixed(1)}`);
+    console.debug(`[zones] User Level: V${baseline.toFixed(2)}`);
+    console.debug(`[zones] Thresholds: Comfort ≤ V${comfortThreshold.toFixed(1)}, Growth (${comfortThreshold.toFixed(1)}, ${limitThreshold.toFixed(1)}], Limit > ${limitThreshold.toFixed(1)}`);
   }
 
   for (const b of boulderScores) {
     let zone: string;
-    if (b.vScore < comfortThreshold) {
+    if (b.vScore <= comfortThreshold) {
       comfort += b.count;
       zone = 'COMFORT';
     } else if (b.vScore > limitThreshold) {

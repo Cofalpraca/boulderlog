@@ -14,6 +14,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { format, subDays, startOfWeek } from 'date-fns';
 import { pl, enUS } from 'date-fns/locale';
 import { getMappingDifficulty, getMaxGrade, computeGymDifficultyProfile, computeSessionZones } from '@/lib/analytics';
+import { fetchUserLevelCache } from '@/lib/userLevelCache';
+import { computeUserLevel } from '@/lib/userLevel';
 import { aggregateVolumeByGrade } from '@/lib/volumeByGrade';
 import { hasPainInPeriod, generatePainInsights, type SessionWithPain } from '@/lib/painInsights';
 import { useToast } from '@/hooks/use-toast';
@@ -219,22 +221,52 @@ export default function Analytics() {
     return profiles.sort((a, b) => (b.samples_count || 0) - (a.samples_count || 0));
   })();
 
-  // Recompute zone summaries
+  // Recompute zone summaries using User Level as baseline
   const recomputeZoneSummaries = useMutation({
     mutationFn: async () => {
       if (!user || !onWallSessions?.length || !allGradeMappings?.length) return;
+      
+      // First, get or compute the user level to use as baseline
+      let userLevelScore: number | undefined;
+      
+      // Try cache first
+      const cachedLevel = await fetchUserLevelCache(user.id);
+      if (cachedLevel?.level_score != null) {
+        userLevelScore = Number(cachedLevel.level_score);
+      } else {
+        // Compute fresh from sessions
+        const sessionsForLevel = onWallSessions.map(s => ({
+          id: s.id,
+          date_start: s.date_start,
+          session_type: 'on_wall' as const,
+          boulder_logs: (s.boulder_logs || []).map(l => ({
+            grade_raw: l.grade_raw,
+            count: l.count
+          }))
+        }));
+        const levelResult = computeUserLevel(sessionsForLevel, allGradeMappings);
+        if (levelResult.levelScore != null && levelResult.levelScore >= 0) {
+          userLevelScore = levelResult.levelScore;
+        }
+      }
+      
       let updated = 0;
       for (const session of onWallSessions) {
         const gymId = session.session_gyms?.[0]?.gym_id;
         if (!gymId || !session.date_end) continue;
+        
+        // Get gym mappings (may be empty for Font-only gyms, that's OK)
         const mappings = allGradeMappings.filter(m => m.gym_id === gymId);
-        if (!mappings.length) continue;
+        
         const logs = (session.boulder_logs || []).map(l => ({
           grade_raw: l.grade_raw,
           count: l.count
         }));
         if (!logs.length) continue;
-        const zones = computeSessionZones(logs, mappings, user.id);
+        
+        // Pass user level as baseline for zone calculation
+        // Note: even with empty mappings, Font/V-scale grades can be normalized via fallback
+        const zones = computeSessionZones(logs, mappings, user.id, userLevelScore);
         await supabase.from('session_zone_summaries').upsert({
           session_id: session.id,
           comfort_pct: zones.comfort_pct,
