@@ -20,7 +20,7 @@ const getInitialLanguage = (): string => {
   return getBrowserLanguage();
 };
 
-i18n
+const i18nInstance = i18n
   .use(initReactI18next)
   .init({
     resources: {
@@ -31,6 +31,9 @@ i18n
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
+    },
+    react: {
+      useSuspense: false, // Disable suspense to prevent hydration issues
     },
   });
 

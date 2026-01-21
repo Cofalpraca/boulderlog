@@ -31,7 +31,7 @@ import AuthReset from "@/pages/AuthReset";
 import MappingHealth from "@/pages/MappingHealth";
 import NotFound from "@/pages/NotFound";
 import { Loader2 } from "lucide-react";
-import "@/i18n";
+
 
 const queryClient = new QueryClient();
 
