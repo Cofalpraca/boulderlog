@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import "./i18n"; // Initialize i18n
+import i18n from "./i18n"; // Initialize i18n
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
@@ -36,4 +36,15 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Wait for i18n to be ready before rendering
+const renderApp = () => {
+  createRoot(document.getElementById("root")!).render(<App />);
+};
+
+// i18n is already initialized synchronously with bundled resources
+// but we ensure it's ready
+if (i18n.isInitialized) {
+  renderApp();
+} else {
+  i18n.on('initialized', renderApp);
+}

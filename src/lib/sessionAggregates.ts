@@ -2,11 +2,13 @@
  * Session Aggregation Utilities
  * 
  * Computes and persists weekly aggregates on session finish.
+ * Also triggers user level cache update for on-wall sessions.
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import { startOfWeek, format } from 'date-fns';
 import { logError } from './errorLogger';
+import { updateUserLevelCache } from './userLevelCache';
 
 interface SessionFinishData {
   sessionId: string;
@@ -72,6 +74,16 @@ export async function updateWeeklyAggregate(data: SessionFinishData): Promise<bo
         context: { weekStart: weekStartStr },
       });
       return false;
+    }
+    
+    // Update user level cache for on-wall sessions (non-blocking)
+    if (data.sessionType === 'on_wall') {
+      updateUserLevelCache(data.userId).catch(() => {
+        // Non-critical, just log
+        logError('user_level_cache', 'Failed to update user level cache after session finish', {
+          userId: data.userId,
+        });
+      });
     }
     
     return true;

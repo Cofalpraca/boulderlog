@@ -69,7 +69,12 @@ export default function BoulderSession() {
   const [endDialogOpen, setEndDialogOpen] = useState(false);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [startTime] = useState(new Date());
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [flashCount, setFlashCount] = useState(0);
+  
+  // Timer: use persisted start time or session date_start to survive app restores
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [elapsedMinutes, setElapsedMinutes] = useState(0);
   
   // Session persistence
   const { clearActiveSession } = useActiveSession();
@@ -197,6 +202,10 @@ export default function BoulderSession() {
   // Register active session when component mounts
   useEffect(() => {
     if (sessionId && activeGym) {
+      // Use session.date_start if online session, otherwise use current time
+      const startTime = session?.date_start ? new Date(session.date_start) : new Date();
+      setSessionStartTime(startTime);
+      
       registerActiveSession({
         sessionId,
         sessionType: 'on_wall',
@@ -204,13 +213,29 @@ export default function BoulderSession() {
         gymName: activeGym.name,
         isOffline: isOfflineSession,
         route: `/session/${sessionId}/boulders`,
+        startTime: startTime.toISOString(),
       });
     }
-  }, [sessionId, activeGym, isOfflineSession, registerActiveSession]);
-
-  // Save session state periodically
+  }, [sessionId, activeGym, session?.date_start, isOfflineSession, registerActiveSession]);
+  
+  // Timer update interval - derived from persisted start time
   useEffect(() => {
-    if (boulders.length > 0 || deletedBoulderIds.size > 0) {
+    if (!sessionStartTime) return;
+    
+    const updateTimer = () => {
+      const mins = Math.floor((Date.now() - sessionStartTime.getTime()) / 60000);
+      setElapsedMinutes(mins);
+    };
+    
+    updateTimer(); // Initial update
+    const interval = setInterval(updateTimer, 10000); // Update every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [sessionStartTime]);
+
+  // Save session state periodically (including failed attempts and flash count)
+  useEffect(() => {
+    if (boulders.length > 0 || deletedBoulderIds.size > 0 || failedAttempts > 0 || flashCount > 0) {
       saveSessionState({
         boulders,
         deletedBoulderIds: Array.from(deletedBoulderIds),
@@ -218,15 +243,19 @@ export default function BoulderSession() {
         rpe,
         fingerFatigue,
         painFlag,
+        failedAttempts,
+        flashCount,
       });
     }
-  }, [boulders, deletedBoulderIds, sessionNotes, rpe, fingerFatigue, painFlag, saveSessionState]);
+  }, [boulders, deletedBoulderIds, sessionNotes, rpe, fingerFatigue, painFlag, failedAttempts, flashCount, saveSessionState]);
 
-  // Load saved session state on mount
+  // Load saved session state on mount (restore timer start time, failed attempts, flash count)
   useEffect(() => {
     const savedState = loadSessionState();
-    if (savedState && savedState.boulders && boulders.length === 0) {
-      setBoulders(savedState.boulders as IndividualBoulder[]);
+    if (savedState) {
+      if (savedState.boulders && boulders.length === 0) {
+        setBoulders(savedState.boulders as IndividualBoulder[]);
+      }
       if (savedState.deletedBoulderIds) {
         setDeletedBoulderIds(new Set(savedState.deletedBoulderIds as string[]));
       }
@@ -234,6 +263,8 @@ export default function BoulderSession() {
       if (savedState.rpe) setRpe(savedState.rpe);
       if (savedState.fingerFatigue) setFingerFatigue(savedState.fingerFatigue);
       if (savedState.painFlag !== undefined) setPainFlag(savedState.painFlag);
+      if (savedState.failedAttempts !== undefined) setFailedAttempts(savedState.failedAttempts as number);
+      if (savedState.flashCount !== undefined) setFlashCount(savedState.flashCount as number);
     }
   }, [loadSessionState]);
 
@@ -318,7 +349,16 @@ export default function BoulderSession() {
     [aggregatedByGrade]
   );
   
-  const elapsedMinutes = Math.floor((Date.now() - startTime.getTime()) / 60000);
+  // Derived flash count from tags is for analytics; sessionFlashCount is the manual counter
+  const tagFlashCount = useMemo(() => {
+    let count = 0;
+    for (const g of Object.values(aggregatedByGrade)) {
+      for (const b of g.boulders) {
+        if (b.tags.includes('Flash')) count++;
+      }
+    }
+    return count;
+  }, [aggregatedByGrade]);
 
   const endSession = async () => {
     if (!user || !activeGym || !activeGradeMappings) return;
@@ -407,6 +447,8 @@ export default function BoulderSession() {
           pain_level: painFlag ? painLevel : null,
           pain_area: painFlag ? painArea : null,
           pain_note: painFlag ? (painNote || null) : null,
+          failed_attempts: failedAttempts,
+          flash_count: flashCount,
         }).eq('id', sessionId);
 
         // Compute and save zone summary
@@ -550,6 +592,61 @@ export default function BoulderSession() {
           </Dialog>
         </div>
       </header>
+
+      {/* Global Counters Bar */}
+      <div className="sticky top-14 z-30 glass border-b border-border/50 py-2">
+        <div className="container px-4 flex items-center justify-center gap-6">
+          {/* Failed Attempts Counter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{t('session.failedAttempts')}</span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setFailedAttempts(Math.max(0, failedAttempts - 1))}
+                disabled={failedAttempts === 0}
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <span className="w-8 text-center font-mono text-sm">{failedAttempts}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setFailedAttempts(failedAttempts + 1)}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Flash Counter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{t('session.flashCounter')}</span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setFlashCount(Math.max(0, flashCount - 1))}
+                disabled={flashCount === 0}
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <span className="w-8 text-center font-mono text-sm">{flashCount}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setFlashCount(flashCount + 1)}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Boulder Logging Grid */}
       <main className="container px-4 py-4">

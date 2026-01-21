@@ -74,7 +74,7 @@ export default function Analytics() {
     enabled: !!gyms?.length
   });
 
-  // Fetch ON-WALL sessions
+  // Fetch ON-WALL sessions with limit guard for "all time"
   const {
     data: onWallSessions,
     isLoading: onWallLoading
@@ -82,18 +82,30 @@ export default function Analytics() {
     queryKey: ['sessions_on_wall', user?.id, timeRange],
     queryFn: async () => {
       let dateFilter = new Date(0);
-      if (timeRange === '7d') dateFilter = subDays(new Date(), 7);else if (timeRange === '30d') dateFilter = subDays(new Date(), 30);else if (timeRange === '90d') dateFilter = subDays(new Date(), 90);
-      const {
-        data
-      } = await supabase.from('sessions').select('*, session_gyms(gym_id), boulder_logs(*), session_zone_summaries(*)').eq('user_id', user!.id).eq('session_type', 'on_wall').gte('date_start', dateFilter.toISOString()).order('date_start', {
-        ascending: false
-      });
+      if (timeRange === '7d') dateFilter = subDays(new Date(), 7);
+      else if (timeRange === '30d') dateFilter = subDays(new Date(), 30);
+      else if (timeRange === '90d') dateFilter = subDays(new Date(), 90);
+      
+      let query = supabase
+        .from('sessions')
+        .select('*, session_gyms(gym_id), boulder_logs(*), session_zone_summaries(*)')
+        .eq('user_id', user!.id)
+        .eq('session_type', 'on_wall')
+        .gte('date_start', dateFilter.toISOString())
+        .order('date_start', { ascending: false });
+      
+      // Add limit guard for "all time" to prevent hitting Supabase 1000 row limit
+      if (timeRange === 'all') {
+        query = query.limit(500);
+      }
+      
+      const { data } = await query;
       return data || [];
     },
     enabled: !!user
   });
 
-  // Fetch OFF-WALL sessions
+  // Fetch OFF-WALL sessions with limit guard
   const {
     data: offWallSessions,
     isLoading: offWallLoading
@@ -101,12 +113,24 @@ export default function Analytics() {
     queryKey: ['sessions_off_wall', user?.id, timeRange],
     queryFn: async () => {
       let dateFilter = new Date(0);
-      if (timeRange === '7d') dateFilter = subDays(new Date(), 7);else if (timeRange === '30d') dateFilter = subDays(new Date(), 30);else if (timeRange === '90d') dateFilter = subDays(new Date(), 90);
-      const {
-        data
-      } = await supabase.from('sessions').select('*, session_items(*, session_sets(*))').eq('user_id', user!.id).eq('session_type', 'off_wall').gte('date_start', dateFilter.toISOString()).order('date_start', {
-        ascending: false
-      });
+      if (timeRange === '7d') dateFilter = subDays(new Date(), 7);
+      else if (timeRange === '30d') dateFilter = subDays(new Date(), 30);
+      else if (timeRange === '90d') dateFilter = subDays(new Date(), 90);
+      
+      let query = supabase
+        .from('sessions')
+        .select('*, session_items(*, session_sets(*))')
+        .eq('user_id', user!.id)
+        .eq('session_type', 'off_wall')
+        .gte('date_start', dateFilter.toISOString())
+        .order('date_start', { ascending: false });
+      
+      // Add limit guard for "all time"
+      if (timeRange === 'all') {
+        query = query.limit(500);
+      }
+      
+      const { data } = await query;
       return data || [];
     },
     enabled: !!user

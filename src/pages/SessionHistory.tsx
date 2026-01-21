@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui/pagination';
 import { 
   ChevronLeft, Mountain, Dumbbell, Loader2, Calendar, Clock, 
   Target, MessageSquare, AlertTriangle, ChevronRight, Hand, Trash2, Pencil, X, Save
@@ -21,6 +22,7 @@ import { Link } from 'react-router-dom';
 import { format, subDays, differenceInMinutes } from 'date-fns';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { usePagination } from '@/hooks/usePagination';
 import type { Database } from '@/integrations/supabase/types';
 
 type SessionType = Database['public']['Enums']['session_type'];
@@ -35,6 +37,8 @@ interface SessionWithDetails {
   finger_fatigue: number | null;
   pain_flag: boolean | null;
   notes: string | null;
+  failed_attempts: number | null;
+  flash_count: number | null;
   session_gyms?: { gym_id: string; gyms?: { name: string } | null }[];
   boulder_logs?: {
     grade_raw: string;
@@ -66,6 +70,186 @@ const ZONE_COLORS = {
   growth: 'bg-zone-growth',
   limit: 'bg-zone-limit',
 };
+
+const PAGE_SIZE = 20;
+
+// Extracted SessionList component with pagination
+interface SessionListProps {
+  sessions: SessionWithDetails[];
+  onSelectSession: (session: SessionWithDetails) => void;
+  t: (key: string) => string;
+  getSessionDuration: (session: SessionWithDetails) => string | null;
+  getBoulderCount: (session: SessionWithDetails) => number;
+  getSetCount: (session: SessionWithDetails) => number;
+}
+
+function SessionList({ 
+  sessions, 
+  onSelectSession, 
+  t, 
+  getSessionDuration, 
+  getBoulderCount, 
+  getSetCount 
+}: SessionListProps) {
+  const pagination = usePagination(sessions, { defaultPageSize: PAGE_SIZE });
+  const { paginatedItems, page, totalPages, setPage, hasNextPage, hasPrevPage, startIndex, endIndex } = pagination;
+  
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = [];
+    if (totalPages <= 5) {
+      for (let i = 0; i < totalPages; i++) pages.push(i);
+    } else {
+      pages.push(0);
+      if (page > 2) pages.push('ellipsis');
+      for (let i = Math.max(1, page - 1); i <= Math.min(totalPages - 2, page + 1); i++) {
+        pages.push(i);
+      }
+      if (page < totalPages - 3) pages.push('ellipsis');
+      pages.push(totalPages - 1);
+    }
+    return pages;
+  };
+  
+  return (
+    <div className="space-y-3">
+      {/* Session count info */}
+      {sessions.length > PAGE_SIZE && (
+        <p className="text-xs text-muted-foreground text-center">
+          {t('history.showing')} {startIndex + 1}-{endIndex} {t('history.of')} {sessions.length}
+        </p>
+      )}
+      
+      {paginatedItems.map((session) => (
+        <Card 
+          key={session.id} 
+          className="glass cursor-pointer hover:border-primary/50 transition-all"
+          onClick={() => onSelectSession(session)}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                session.session_type === 'on_wall' ? 'bg-session-on-wall' : 'bg-session-off-wall'
+              }`}>
+                {session.session_type === 'on_wall' ? (
+                  <Mountain className="h-5 w-5 text-primary-foreground" />
+                ) : (
+                  <Dumbbell className="h-5 w-5 text-primary-foreground" />
+                )}
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">
+                    {session.session_type === 'on_wall' ? t('dashboard.boulderingSession') : t('dashboard.strengthSession')}
+                  </p>
+                  {(session.notes?.startsWith('Imported:') || session.notes?.startsWith('Zaimportowano:')) && (
+                    <Badge variant="secondary" className="text-xs">
+                      {t('import.importedBadge')}
+                    </Badge>
+                  )}
+                  {session.pain_flag && (
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+                  <span>{format(new Date(session.date_start), 'EEE, MMM d')}</span>
+                  {getSessionDuration(session) && (
+                    <>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {getSessionDuration(session)}
+                      </span>
+                    </>
+                  )}
+                </div>
+                
+                {session.session_type === 'on_wall' && session.session_gyms?.[0]?.gyms && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {session.session_gyms[0].gyms.name}
+                  </p>
+                )}
+              </div>
+
+              <div className="text-right shrink-0">
+                {session.session_type === 'on_wall' ? (
+                  <div>
+                    <p className="font-bold text-lg text-primary">{getBoulderCount(session)}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.boulders').toLowerCase()}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-bold text-lg text-primary">{getSetCount(session)}</p>
+                    <p className="text-xs text-muted-foreground">{t('analytics.sets').toLowerCase()}</p>
+                  </div>
+                )}
+              </div>
+              
+              <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 self-center" />
+            </div>
+
+            {/* Zone indicators for ON-WALL */}
+            {session.session_type === 'on_wall' && session.session_zone_summaries?.[0] && (
+              <div className="flex gap-1 mt-3">
+                <div 
+                  className="h-1.5 rounded-full bg-zone-comfort"
+                  style={{ width: `${session.session_zone_summaries[0].comfort_pct || 0}%` }}
+                />
+                <div 
+                  className="h-1.5 rounded-full bg-zone-growth"
+                  style={{ width: `${session.session_zone_summaries[0].growth_pct || 0}%` }}
+                />
+                <div 
+                  className="h-1.5 rounded-full bg-zone-limit"
+                  style={{ width: `${session.session_zone_summaries[0].limit_pct || 0}%` }}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+      
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <Pagination className="mt-4">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={() => hasPrevPage && setPage(page - 1)}
+                className={!hasPrevPage ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+            
+            {getPageNumbers().map((pageNum, idx) => (
+              <PaginationItem key={idx}>
+                {pageNum === 'ellipsis' ? (
+                  <PaginationEllipsis />
+                ) : (
+                  <PaginationLink
+                    onClick={() => setPage(pageNum)}
+                    isActive={page === pageNum}
+                    className="cursor-pointer"
+                  >
+                    {pageNum + 1}
+                  </PaginationLink>
+                )}
+              </PaginationItem>
+            ))}
+            
+            <PaginationItem>
+              <PaginationNext 
+                onClick={() => hasNextPage && setPage(page + 1)}
+                className={!hasNextPage ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
+    </div>
+  );
+}
 
 export default function SessionHistory() {
   const { user } = useAuth();
@@ -291,93 +475,14 @@ export default function SessionHistory() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {sessions?.map((session) => (
-              <Card 
-                key={session.id} 
-                className="glass cursor-pointer hover:border-primary/50 transition-all"
-                onClick={() => setSelectedSession(session)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                      session.session_type === 'on_wall' ? 'bg-session-on-wall' : 'bg-session-off-wall'
-                    }`}>
-                      {session.session_type === 'on_wall' ? (
-                        <Mountain className="h-5 w-5 text-primary-foreground" />
-                      ) : (
-                        <Dumbbell className="h-5 w-5 text-primary-foreground" />
-                      )}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">
-                          {session.session_type === 'on_wall' ? t('dashboard.boulderingSession') : t('dashboard.strengthSession')}
-                        </p>
-                        {session.pain_flag && (
-                          <AlertTriangle className="h-4 w-4 text-destructive" />
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
-                        <span>{format(new Date(session.date_start), 'EEE, MMM d')}</span>
-                        {getSessionDuration(session) && (
-                          <>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {getSessionDuration(session)}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      
-                      {session.session_type === 'on_wall' && session.session_gyms?.[0]?.gyms && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {session.session_gyms[0].gyms.name}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      {session.session_type === 'on_wall' ? (
-                        <div>
-                          <p className="font-bold text-lg text-primary">{getBoulderCount(session)}</p>
-                          <p className="text-xs text-muted-foreground">{t('dashboard.boulders').toLowerCase()}</p>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="font-bold text-lg text-primary">{getSetCount(session)}</p>
-                          <p className="text-xs text-muted-foreground">{t('analytics.sets').toLowerCase()}</p>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 self-center" />
-                  </div>
-
-                  {/* Zone indicators for ON-WALL */}
-                  {session.session_type === 'on_wall' && session.session_zone_summaries?.[0] && (
-                    <div className="flex gap-1 mt-3">
-                      <div 
-                        className="h-1.5 rounded-full bg-zone-comfort"
-                        style={{ width: `${session.session_zone_summaries[0].comfort_pct || 0}%` }}
-                      />
-                      <div 
-                        className="h-1.5 rounded-full bg-zone-growth"
-                        style={{ width: `${session.session_zone_summaries[0].growth_pct || 0}%` }}
-                      />
-                      <div 
-                        className="h-1.5 rounded-full bg-zone-limit"
-                        style={{ width: `${session.session_zone_summaries[0].limit_pct || 0}%` }}
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <SessionList 
+            sessions={sessions || []}
+            onSelectSession={setSelectedSession}
+            t={t}
+            getSessionDuration={getSessionDuration}
+            getBoulderCount={getBoulderCount}
+            getSetCount={getSetCount}
+          />
         )}
       </main>
 
@@ -553,6 +658,27 @@ export default function SessionHistory() {
                         </>
                       )}
                     </div>
+                    
+                    {/* Failed Attempts and Flash Count (ON-WALL only) */}
+                    {selectedSession.session_type === 'on_wall' && (
+                      (selectedSession.failed_attempts !== null && selectedSession.failed_attempts > 0) ||
+                      (selectedSession.flash_count !== null && selectedSession.flash_count > 0)
+                    ) && (
+                      <div className="flex flex-wrap gap-3 text-sm">
+                        {selectedSession.failed_attempts !== null && selectedSession.failed_attempts > 0 && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-muted rounded-md">
+                            <span className="text-muted-foreground">{t('session.failedAttempts')}:</span>
+                            <span className="font-mono font-medium">{selectedSession.failed_attempts}</span>
+                          </div>
+                        )}
+                        {selectedSession.flash_count !== null && selectedSession.flash_count > 0 && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-muted rounded-md">
+                            <span className="text-muted-foreground">{t('session.flashes')}:</span>
+                            <span className="font-mono font-medium">{selectedSession.flash_count}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Zone Summary (ON-WALL only) */}
                     {selectedSession.session_type === 'on_wall' && selectedSession.session_zone_summaries?.[0] && (

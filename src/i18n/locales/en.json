@@ -40,7 +40,9 @@
     "set": "Set",
     "reps": "Reps",
     "weight": "Weight",
-    "exercises": "Exercises"
+    "exercises": "Exercises",
+    "errorLoadingData": "Error loading data",
+    "retry": "Retry"
   },
   "auth": {
     "signIn": "Sign In",
@@ -301,7 +303,40 @@
     "leaveSessionTitle": "Leave Training Session?",
     "leaveSessionDesc": "You have unsaved progress. If you leave now, your session data may be lost.",
     "keepTraining": "Keep Training",
-    "discardAndLeave": "Discard & Leave"
+    "discardAndLeave": "Discard & Leave",
+    "failedAttempts": "Failed attempts",
+    "flashCounter": "Flashes",
+    "flashes": "Flashes"
+  },
+  "import": {
+    "noGyms": "No gyms configured",
+    "addGymFirst": "Add a gym before importing boulder history.",
+    "selectGym": "Select Gym",
+    "chooseGym": "Choose a gym...",
+    "formatTitle": "Input Format",
+    "formatDesc": "One line per session. Date first, then grade entries (count×grade).",
+    "pasteData": "Paste your boulder history",
+    "placeholder": "10.01.2025, 2x6a, 3x6b, 1x6c+\n12.01.2025, 5x6a, 2x6b+",
+    "preview": "Preview Import",
+    "previewTitle": "Import Preview",
+    "sessions": "Sessions",
+    "boulders": "Boulders",
+    "dateRange": "From {{from}} to {{to}}",
+    "errors": "{{count}} line(s) with errors",
+    "errorsDesc": "These lines will be skipped. Valid lines will still be imported.",
+    "line": "Line",
+    "unmappedWarning": "Unmapped Grades",
+    "unmappedDesc": "These grades are not in your gym's mapping. They will be stored but won't affect analytics until mapped.",
+    "confirmImport": "Import {{count}} session(s)",
+    "importing": "Importing sessions...",
+    "complete": "Import Complete!",
+    "importMore": "Import More",
+    "success": "Import successful",
+    "successDesc": "Created {{sessions}} sessions with {{boulders}} boulders.",
+    "successHint": "Use 'All time' filter in Session History to see older sessions.",
+    "failed": "Import failed. Please try again.",
+    "importedNote": "Imported: {{date}}",
+    "importedBadge": "Imported"
   },
   "settings": {
     "title": "Settings",
@@ -333,7 +368,10 @@
     "themeSystem": "System",
     "languageDesc": "Choose your preferred language.",
     "english": "English",
-    "polish": "Polski"
+    "polish": "Polski",
+    "import": "Import",
+    "importHistory": "Import Boulder History",
+    "importHistoryDesc": "Import ON-WALL session history from text format."
   },
   "onboarding": {
     "welcome": "Welcome to BoulderLog",
@@ -391,7 +429,9 @@
     "deleteSession": "Delete Session?",
     "deleteSessionDesc": "This will permanently delete this session and all its logs. This action cannot be undone.",
     "sessionDeleted": "Session deleted successfully",
-    "sessionUpdated": "Session updated successfully"
+    "sessionUpdated": "Session updated successfully",
+    "showing": "Showing",
+    "of": "of"
   },
   "plan": {
     "title": "Weekly Plan",
@@ -406,6 +446,7 @@
     "focusAreas": "Focus areas, goals...",
     "sessionPlanned": "Session planned!",
     "sessionRemoved": "Session removed",
+    "cannotPlanPast": "You cannot plan sessions in the past.",
     "selectGym": "Select Gym (optional)",
     "noGym": "No gym",
     "gymRecommended": "Recommended for ON-WALL sessions"
@@ -554,11 +595,21 @@
   },
   "mappingHealth": {
     "title": "Mapping Health",
+    "summaryHeader": "Analyzing {{active}} of {{total}} gyms with recent data",
+    "gymsWithoutData": "Gyms without recent data",
+    "noRecentDataDesc": "No climbing data in last 90 days",
+    "startSessionAtGym": "Start Session",
     "overallHealth": "Overall Health",
     "allGood": "All grades are normalizable. Analytics will be accurate.",
     "issuesFound": "{{count}} gym(s) have mapping issues that may affect analytics.",
     "topUnmapped": "Top unmapped grades:",
     "noData": "No climbing data in the last 90 days",
+    "noGyms": "No gyms configured yet",
+    "addGymFirst": "Add a gym to start tracking your climbing sessions.",
+    "noBouldersLogged": "No boulders logged in recent sessions",
+    "logBoulders": "Log some boulders during your sessions to see mapping health.",
+    "errorMessage": "Could not fetch mapping health data. Please try again.",
+    "loadingTimeout": "This is taking longer than expected. Please retry.",
     "startSession": "Start a bouldering session to see mapping health.",
     "startSessionBtn": "Start Session",
     "issues": "Issues",

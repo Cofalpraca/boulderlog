@@ -10,11 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { 
   ChevronLeft, ChevronRight, Calendar, Mountain, Dumbbell, Plus, 
-  Loader2, Trash2, FileText, Play, MapPin
+  Loader2, Trash2, FileText, Play, MapPin, CheckCircle2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from 'date-fns';
+import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, isBefore, startOfDay } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -148,6 +148,13 @@ export default function WeeklyPlan() {
     mutationFn: async () => {
       if (!weeklyPlan) return;
       
+      // Prevent planning sessions in the past
+      const selectedDate = addDays(weekStart, selectedDay);
+      const today = startOfDay(new Date());
+      if (isBefore(startOfDay(selectedDate), today)) {
+        throw new Error('Cannot plan sessions in the past');
+      }
+      
       // Store gym in notes for ON-WALL sessions (no schema change)
       let notesWithGym = sessionNotes || null;
       if (selectedType === 'on_wall' && selectedGymId && gyms) {
@@ -176,7 +183,10 @@ export default function WeeklyPlan() {
       toast({ title: t('plan.sessionPlanned') });
     },
     onError: (error) => {
-      toast({ title: t('common.error'), description: String(error), variant: 'destructive' });
+      const message = error.message === 'Cannot plan sessions in the past' 
+        ? t('plan.cannotPlanPast')
+        : String(error);
+      toast({ title: t('common.error'), description: message, variant: 'destructive' });
     },
   });
 
@@ -247,6 +257,13 @@ export default function WeeklyPlan() {
   const isLoading = planLoading || sessionsLoading;
 
   // Extract gym name from notes if present
+  // Check if a day is in the past (before today)
+  const isPastDay = (dayIndex: number) => {
+    const dayDate = addDays(weekStart, dayIndex);
+    const today = startOfDay(new Date());
+    return isBefore(startOfDay(dayDate), today);
+  };
+
   const extractGymFromNotes = (notes: string | null): { gym: string | null; cleanNotes: string | null } => {
     if (!notes) return { gym: null, cleanNotes: null };
     const match = notes.match(/^\[Gym: (.+?)\]\s*/);
@@ -343,7 +360,13 @@ export default function WeeklyPlan() {
                       }
                     }}>
                       <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7"
+                          disabled={isPastDay(dayIndex)}
+                          title={isPastDay(dayIndex) ? t('plan.cannotPlanPast') : undefined}
+                        >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </DialogTrigger>
@@ -458,15 +481,24 @@ export default function WeeklyPlan() {
                     <CardContent className="pt-0 pb-3 px-4 space-y-2">
                       {daySessions.map((session) => {
                         const { gym, cleanNotes } = extractGymFromNotes(session.notes);
+                        const isEnded = isPastDay(dayIndex);
                         return (
                           <div 
                             key={session.id}
                             className={`flex items-center gap-3 p-2 rounded-lg ${
-                              session.session_type === 'on_wall' ? 'bg-session-on-wall/10' : 'bg-session-off-wall/10'
+                              isEnded 
+                                ? 'bg-zone-growth/10 border border-zone-growth/30' 
+                                : session.session_type === 'on_wall' 
+                                  ? 'bg-session-on-wall/10' 
+                                  : 'bg-session-off-wall/10'
                             }`}
                           >
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                              session.session_type === 'on_wall' ? 'bg-session-on-wall' : 'bg-session-off-wall'
+                              isEnded
+                                ? 'bg-zone-growth'
+                                : session.session_type === 'on_wall' 
+                                  ? 'bg-session-on-wall' 
+                                  : 'bg-session-off-wall'
                             }`}>
                               {session.session_type === 'on_wall' ? (
                                 <Mountain className="h-4 w-4 text-primary-foreground" />
@@ -475,7 +507,7 @@ export default function WeeklyPlan() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">
+                              <p className={`font-medium text-sm truncate ${isEnded ? 'text-zone-growth' : ''}`}>
                                 {session.templates?.name || (session.session_type === 'on_wall' ? t('dashboard.boulderingSession') : t('dashboard.strengthSession'))}
                               </p>
                               {gym && (
@@ -488,22 +520,29 @@ export default function WeeklyPlan() {
                                 <p className="text-xs text-muted-foreground truncate">{cleanNotes}</p>
                               )}
                             </div>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              className="shrink-0"
-                              onClick={() => startSession(session)}
-                            >
-                              <Play className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              size="icon" 
-                              variant="ghost"
-                              className="shrink-0 h-8 w-8"
-                              onClick={() => deletePlannedSession.mutate(session.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                            {isEnded && (
+                              <CheckCircle2 className="h-5 w-5 text-zone-growth shrink-0" />
+                            )}
+                            {!isEnded && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                className="shrink-0"
+                                onClick={() => startSession(session)}
+                              >
+                                <Play className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {!isEnded && (
+                              <Button 
+                                size="icon" 
+                                variant="ghost"
+                                className="shrink-0 h-8 w-8"
+                                onClick={() => deletePlannedSession.mutate(session.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
                           </div>
                         );
                       })}

@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { TrendingUp, HelpCircle, AlertTriangle, Loader2, Settings } from 'lucide-react';
 import { computeUserLevel, DEFAULT_WINDOW_DAYS, MIN_BOULDERS_FOR_LEVEL, TOP_BOULDERS_COUNT, type GradeScale } from '@/lib/userLevel';
+import { fetchUserLevelCache, updateUserLevelCache } from '@/lib/userLevelCache';
 
 interface UserLevelCardProps {
   userId: string;
@@ -16,14 +17,30 @@ interface UserLevelCardProps {
 export function UserLevelCard({ userId }: UserLevelCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Fetch all ON-WALL sessions from the window (90 days)
+  // First, try to fetch from cache for instant display
+  const { data: cachedLevel, isLoading: cacheLoading } = useQuery({
+    queryKey: ['user_level_cache', userId],
+    queryFn: () => fetchUserLevelCache(userId),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch all ON-WALL sessions from the window (90 days) - only if cache is stale or missing
   const cutoffDate = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - DEFAULT_WINDOW_DAYS);
     return d.toISOString();
   }, []);
+
+  // Check if cache is fresh (less than 24 hours old)
+  const cacheIsFresh = useMemo(() => {
+    if (!cachedLevel?.computed_at) return false;
+    const cacheAge = Date.now() - new Date(cachedLevel.computed_at).getTime();
+    return cacheAge < 24 * 60 * 60 * 1000; // 24 hours
+  }, [cachedLevel?.computed_at]);
 
   const { data: sessions, isLoading: sessionsLoading } = useQuery({
     queryKey: ['user_level_sessions', userId, cutoffDate],
@@ -37,7 +54,7 @@ export function UserLevelCard({ userId }: UserLevelCardProps) {
         .order('date_start', { ascending: false });
       return data || [];
     },
-    enabled: !!userId,
+    enabled: !!userId && !cacheIsFresh, // Skip if cache is fresh
     staleTime: 5 * 60 * 1000,
   });
 
@@ -75,7 +92,27 @@ export function UserLevelCard({ userId }: UserLevelCardProps) {
     return gymsData.primaryGym.grading_type as GradeScale;
   }, [gymsData?.primaryGym]);
 
+  // Use cached result if fresh, otherwise compute fresh
   const levelResult = useMemo(() => {
+    // If cache is fresh, use cached values
+    if (cacheIsFresh && cachedLevel) {
+      return {
+        hasData: cachedLevel.level_score !== null,
+        levelScore: cachedLevel.level_score,
+        levelVGrade: cachedLevel.level_v_grade,
+        levelFontGrade: cachedLevel.level_font_grade,
+        maxScore: cachedLevel.max_score,
+        maxVGrade: cachedLevel.max_v_grade,
+        maxFontGrade: cachedLevel.max_font_grade,
+        bouldersUsed: cachedLevel.boulders_used,
+        totalBoulders: cachedLevel.total_boulders,
+        windowDays: cachedLevel.window_days,
+        noDataReason: cachedLevel.level_score === null ? 'insufficient_mapped' : undefined,
+        rawLogsFound: cachedLevel.total_boulders,
+      };
+    }
+
+    // Fallback to fresh computation
     if (!sessions || !gymsData?.mappings) {
       return null;
     }
@@ -87,15 +124,22 @@ export function UserLevelCard({ userId }: UserLevelCardProps) {
       boulder_logs: s.boulder_logs || [],
     }));
 
-    return computeUserLevel(
+    const result = computeUserLevel(
       sessionData,
       gymsData.mappings,
       preferredScale,
       gymsData.primaryMappings
     );
-  }, [sessions, gymsData?.mappings, gymsData?.primaryMappings, preferredScale]);
 
-  const isLoading = sessionsLoading || gymsLoading;
+    // Update cache in background if we computed fresh
+    if (result.hasData) {
+      updateUserLevelCache(userId).catch(() => {});
+    }
+
+    return result;
+  }, [cacheIsFresh, cachedLevel, sessions, gymsData?.mappings, gymsData?.primaryMappings, preferredScale, userId]);
+
+  const isLoading = cacheLoading || (!cacheIsFresh && (sessionsLoading || gymsLoading));
   const hasMappings = (gymsData?.mappings?.length || 0) > 0;
 
   return (
@@ -226,11 +270,28 @@ export function UserLevelCard({ userId }: UserLevelCardProps) {
                 className="w-full"
                 onClick={() => {
                   setIsOpen(false);
-                  navigate('/gyms');
+                  navigate('/mapping-health');
                 }}
               >
                 <Settings className="h-4 w-4 mr-2" />
                 {t('dashboard.userLevel.configureMappings')}
+              </Button>
+            </div>
+          )}
+          
+          {hasMappings && levelResult?.noDataReason === 'insufficient_mapped' && (
+            <div className="border-t pt-3 border-border">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/mapping-health');
+                }}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                {t('mappingHealth.title')}
               </Button>
             </div>
           )}

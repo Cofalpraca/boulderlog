@@ -11,6 +11,7 @@ export type ErrorCategory =
   | 'session_discard'
   | 'mapping_normalization'
   | 'analytics_compute'
+  | 'user_level_cache'
   | 'unknown';
 
 interface ErrorLogEntry {
@@ -129,6 +130,7 @@ export function getErrorCounts(): Record<ErrorCategory, number> {
     session_discard: 0,
     mapping_normalization: 0,
     analytics_compute: 0,
+    user_level_cache: 0,
     unknown: 0,
   };
   
