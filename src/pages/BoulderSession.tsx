@@ -563,7 +563,7 @@ export default function BoulderSession() {
                 {t('session.end')}
               </Button>
             </DialogTrigger>
-            <DialogContent className="glass max-w-md">
+            <DialogContent className="glass max-h-[calc(100dvh-1rem)] max-w-md overflow-y-auto p-4 sm:max-h-[calc(100dvh-2rem)] sm:p-6">
               <DialogHeader>
                 <DialogTitle>{t('session.endSession')}</DialogTitle>
               </DialogHeader>
@@ -926,7 +926,7 @@ function EndSessionForm({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-2">
       {/* Summary */}
       <div className="flex items-center gap-4 p-4 rounded-lg bg-secondary/50">
         <CheckCircle2 className="h-8 w-8 text-zone-growth" />

@@ -114,7 +114,7 @@ describe('Development Zones', () => {
       ];
       // Baseline ≈ (1*5 + 5*5 + 9*5) / 15 = 75/15 = 5
       // Comfort < 3, Growth 3-6, Limit > 6
-      const result = computeSessionZones(logs, [], 'user-1');
+      const result = computeSessionZones(logs, [], 'user-1', 5);
       
       // All three zones should have some percentage
       expect(result.comfort_pct).toBeGreaterThan(0);
@@ -133,7 +133,7 @@ describe('Development Zones', () => {
         { grade_raw: '6b+', count: 10 }, // V5
         { grade_raw: '6a', count: 10 },  // V3
       ];
-      const result = computeSessionZones(logs, [], 'user-1');
+      const result = computeSessionZones(logs, [], 'user-1', 5.9);
       
       // Should NOT be 100% Growth
       expect(result.growth_pct).toBeLessThan(100);

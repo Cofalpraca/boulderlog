@@ -49,8 +49,11 @@ export const DEFAULT_FONT_TO_V: Record<string, number> = {
   '5': 1,      // V1
   '5+': 2,     // V2
   '5a': 1,     // V1
+  '5a+': 1,    // V1
   '5b': 1,     // V1
+  '5b+': 2,    // V2
   '5c': 2,     // V2
+  '5c+': 3,    // V3
   // Intermediate grades
   '6a': 3,     // V3
   '6a+': 4,    // V4
