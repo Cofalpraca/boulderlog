@@ -1,15 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 
-// IndexedDB database configuration
 const DB_NAME = 'climbtrack-offline';
-const DB_VERSION = 2; // Bumped version for new stores
-const STORES = {
-  pendingSessions: 'pendingSessions',
-  pendingLogs: 'pendingLogs',
-  pendingSessionItems: 'pendingSessionItems',
-  pendingSessionSets: 'pendingSessionSets',
-  cachedData: 'cachedData',
-};
+const DB_VERSION = 2;
+const SESSION_STORES = ['pendingSessions', 'pendingLogs', 'pendingSessionItems', 'pendingSessionSets'];
+const STORAGE_CHANGED = 'offline-storage-changed';
 
 export interface PendingSession {
   id: string;
@@ -24,10 +18,14 @@ export interface PendingSession {
   rpe?: number;
   finger_fatigue?: number;
   pain_flag?: boolean;
+  pain_level?: number | null;
+  pain_area?: string | null;
+  pain_note?: string | null;
+  failed_attempts?: number;
+  flash_count?: number;
   createdAt: number;
   synced: boolean;
 }
-
 export interface PendingBoulderLog {
   id: string;
   sessionTempId: string;
@@ -37,16 +35,15 @@ export interface PendingBoulderLog {
   tags?: string[];
   notes?: string;
 }
-
 export interface PendingSessionItem {
   id: string;
   sessionTempId: string;
   exercise_id: string;
   exercise_name: string;
   exercise_category: string;
+  protocol_id?: string;
   order_index: number;
 }
-
 export interface PendingSessionSet {
   id: string;
   sessionItemId: string;
@@ -56,415 +53,180 @@ export interface PendingSessionSet {
   weight_kg: number | null;
   rpe: number | null;
 }
+export type OfflineItemWithSets = Omit<PendingSessionItem, 'sessionTempId'> & {
+  sets: Omit<PendingSessionSet, 'sessionItemId'>[];
+};
 
-// Open IndexedDB connection
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
-
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      
-      // Create stores if they don't exist
-      if (!db.objectStoreNames.contains(STORES.pendingSessions)) {
-        db.createObjectStore(STORES.pendingSessions, { keyPath: 'tempId' });
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('pendingSessions')) {
+        db.createObjectStore('pendingSessions', { keyPath: 'tempId' });
       }
-      if (!db.objectStoreNames.contains(STORES.pendingLogs)) {
-        const logsStore = db.createObjectStore(STORES.pendingLogs, { keyPath: 'id' });
-        logsStore.createIndex('sessionTempId', 'sessionTempId', { unique: false });
+      for (const [name, index] of [
+        ['pendingLogs', 'sessionTempId'], ['pendingSessionItems', 'sessionTempId'],
+        ['pendingSessionSets', 'sessionItemId'],
+      ]) {
+        if (!db.objectStoreNames.contains(name)) {
+          db.createObjectStore(name, { keyPath: 'id' }).createIndex(index, index);
+        }
       }
-      if (!db.objectStoreNames.contains(STORES.pendingSessionItems)) {
-        const itemsStore = db.createObjectStore(STORES.pendingSessionItems, { keyPath: 'id' });
-        itemsStore.createIndex('sessionTempId', 'sessionTempId', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(STORES.pendingSessionSets)) {
-        const setsStore = db.createObjectStore(STORES.pendingSessionSets, { keyPath: 'id' });
-        setsStore.createIndex('sessionItemId', 'sessionItemId', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(STORES.cachedData)) {
-        db.createObjectStore(STORES.cachedData, { keyPath: 'key' });
-      }
+      if (!db.objectStoreNames.contains('cachedData')) db.createObjectStore('cachedData', { keyPath: 'key' });
     };
   });
 }
-
-// Hook for managing offline storage
+function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+// Resolve only after commit: a successful individual request can still roll back.
+async function transact<T>(stores: string[], mode: IDBTransactionMode, action: (tx: IDBTransaction) => Promise<T>): Promise<T> {
+  const db = await openDB();
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      const tx = db.transaction(stores, mode);
+      let result: T;
+      let actionError: unknown;
+      tx.oncomplete = () => resolve(result);
+      tx.onabort = () => reject(actionError || tx.error || new Error('Offline transaction aborted'));
+      action(tx).then(value => { result = value; }).catch(error => {
+        actionError = error;
+        tx.abort();
+      });
+    });
+  } finally {
+    db.close();
+  }
+}
+async function removeDetails(tx: IDBTransaction, tempId: string) {
+  const logsStore = tx.objectStore('pendingLogs');
+  const logs: PendingBoulderLog[] = await requestResult(logsStore.index('sessionTempId').getAll(tempId));
+  for (const log of logs) logsStore.delete(log.id);
+  const itemsStore = tx.objectStore('pendingSessionItems');
+  const items: PendingSessionItem[] = await requestResult(itemsStore.index('sessionTempId').getAll(tempId));
+  const setsStore = tx.objectStore('pendingSessionSets');
+  for (const item of items) {
+    const sets: PendingSessionSet[] = await requestResult(setsStore.index('sessionItemId').getAll(item.id));
+    for (const set of sets) setsStore.delete(set.id);
+    itemsStore.delete(item.id);
+  }
+}
+async function writeOffline(action: () => Promise<unknown>): Promise<boolean> {
+  try {
+    await action();
+    window.dispatchEvent(new Event(STORAGE_CHANGED));
+    return true;
+  } catch (error) {
+    console.error('Offline storage write failed:', error);
+    return false;
+  }
+}
 export function useOfflineStorage() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  // Monitor online status
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
+    const online = () => setIsOnline(true);
+    const offline = () => setIsOnline(false);
+    window.addEventListener('online', online);
+    window.addEventListener('offline', offline);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', online);
+      window.removeEventListener('offline', offline);
     };
   }, []);
-
-  // Count pending sessions
+  const getPendingSessions = useCallback((): Promise<PendingSession[]> =>
+    transact(['pendingSessions'], 'readonly', tx => requestResult(tx.objectStore('pendingSessions').getAll())), []);
   const refreshPendingCount = useCallback(async () => {
     try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.pendingSessions, 'readonly');
-      const store = tx.objectStore(STORES.pendingSessions);
-      const countRequest = store.count();
-      
-      countRequest.onsuccess = () => {
-        setPendingCount(countRequest.result);
-      };
+      const sessions = await getPendingSessions();
+      setPendingCount(sessions.filter(s => !s.synced && s.date_end).length);
     } catch (error) {
       console.error('Failed to count pending sessions:', error);
     }
-  }, []);
-
+  }, [getPendingSessions]);
   useEffect(() => {
-    refreshPendingCount();
+    void refreshPendingCount();
+    window.addEventListener(STORAGE_CHANGED, refreshPendingCount);
+    return () => window.removeEventListener(STORAGE_CHANGED, refreshPendingCount);
   }, [refreshPendingCount]);
-
-  // Save session offline
-  const saveSessionOffline = useCallback(async (session: Omit<PendingSession, 'createdAt' | 'synced'>) => {
-    try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.pendingSessions, 'readwrite');
-      const store = tx.objectStore(STORES.pendingSessions);
-      
-      await new Promise<void>((resolve, reject) => {
-        const request = store.put({
-          ...session,
-          createdAt: Date.now(),
-          synced: false,
-        });
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      });
-      
-      await refreshPendingCount();
-      return true;
-    } catch (error) {
-      console.error('Failed to save session offline:', error);
-      return false;
-    }
-  }, [refreshPendingCount]);
-
-  // Update session offline (for adding end time, notes, etc.)
-  const updateSessionOffline = useCallback(async (tempId: string, updates: Partial<PendingSession>) => {
-    try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.pendingSessions, 'readwrite');
-      const store = tx.objectStore(STORES.pendingSessions);
-      
-      const existing = await new Promise<PendingSession | undefined>((resolve, reject) => {
-        const request = store.get(tempId);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-      
-      if (existing) {
-        await new Promise<void>((resolve, reject) => {
-          const request = store.put({ ...existing, ...updates });
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        });
+  const saveSessionOffline = useCallback((session: Omit<PendingSession, 'createdAt' | 'synced'>) =>
+    writeOffline(() => transact(['pendingSessions'], 'readwrite', async tx => {
+      await requestResult(tx.objectStore('pendingSessions').put({ ...session, createdAt: Date.now(), synced: false }));
+    })), []);
+  const updateSessionOffline = useCallback((tempId: string, updates: Partial<PendingSession>) =>
+    writeOffline(() => transact(['pendingSessions'], 'readwrite', async tx => {
+      const store = tx.objectStore('pendingSessions');
+      const existing = await requestResult(store.get(tempId));
+      if (!existing) throw new Error('Offline session not found');
+      await requestResult(store.put({ ...existing, ...updates }));
+    })), []);
+  const saveBoulderLogsOffline = useCallback((sessionTempId: string, logs: Omit<PendingBoulderLog, 'sessionTempId'>[]) =>
+    writeOffline(() => transact(['pendingLogs'], 'readwrite', async tx => {
+      for (const log of logs) tx.objectStore('pendingLogs').put({ ...log, sessionTempId });
+    })), []);
+  const saveSessionItemsOffline = useCallback((sessionTempId: string, items: Omit<PendingSessionItem, 'sessionTempId'>[]) =>
+    writeOffline(() => transact(['pendingSessionItems'], 'readwrite', async tx => {
+      for (const item of items) tx.objectStore('pendingSessionItems').put({ ...item, sessionTempId });
+    })), []);
+  const saveSessionSetsOffline = useCallback((sessionItemId: string, sets: Omit<PendingSessionSet, 'sessionItemId'>[]) =>
+    writeOffline(() => transact(['pendingSessionSets'], 'readwrite', async tx => {
+      for (const set of sets) tx.objectStore('pendingSessionSets').put({ ...set, sessionItemId });
+    })), []);
+  const getLogsForSession = useCallback((tempId: string): Promise<PendingBoulderLog[]> =>
+    transact(['pendingLogs'], 'readonly', tx => requestResult(tx.objectStore('pendingLogs').index('sessionTempId').getAll(tempId))), []);
+  const getSessionItemsForSession = useCallback((tempId: string): Promise<PendingSessionItem[]> =>
+    transact(['pendingSessionItems'], 'readonly', tx => requestResult(tx.objectStore('pendingSessionItems').index('sessionTempId').getAll(tempId))), []);
+  const getSessionSetsForItem = useCallback((itemId: string): Promise<PendingSessionSet[]> =>
+    transact(['pendingSessionSets'], 'readonly', tx => requestResult(tx.objectStore('pendingSessionSets').index('sessionItemId').getAll(itemId))), []);
+  // Publish date_end and all child records in a single transaction.
+  const completeSessionOffline = useCallback((tempId: string, updates: Partial<PendingSession>,
+    details: { logs?: Omit<PendingBoulderLog, 'sessionTempId'>[]; items?: OfflineItemWithSets[] }) =>
+    writeOffline(() => transact(SESSION_STORES, 'readwrite', async tx => {
+      const store = tx.objectStore('pendingSessions');
+      const session: PendingSession | undefined = await requestResult(store.get(tempId));
+      if (!session || !updates.date_end) throw new Error('Offline session or end time missing');
+      await removeDetails(tx, tempId);
+      for (const log of details.logs || []) tx.objectStore('pendingLogs').put({ ...log, sessionTempId: tempId });
+      for (const { sets, ...item } of details.items || []) {
+        tx.objectStore('pendingSessionItems').put({ ...item, sessionTempId: tempId });
+        for (const set of sets) tx.objectStore('pendingSessionSets').put({ ...set, sessionItemId: item.id });
       }
-      
-      return true;
-    } catch (error) {
-      console.error('Failed to update session offline:', error);
-      return false;
-    }
-  }, []);
-
-  // Save boulder logs offline
-  const saveBoulderLogsOffline = useCallback(async (sessionTempId: string, logs: Omit<PendingBoulderLog, 'sessionTempId'>[]) => {
-    try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.pendingLogs, 'readwrite');
-      const store = tx.objectStore(STORES.pendingLogs);
-      
-      for (const log of logs) {
-        await new Promise<void>((resolve, reject) => {
-          const request = store.put({ ...log, sessionTempId });
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        });
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Failed to save logs offline:', error);
-      return false;
-    }
-  }, []);
-
-  // Save session items offline (for OFF-WALL sessions)
-  const saveSessionItemsOffline = useCallback(async (sessionTempId: string, items: Omit<PendingSessionItem, 'sessionTempId'>[]) => {
-    try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.pendingSessionItems, 'readwrite');
-      const store = tx.objectStore(STORES.pendingSessionItems);
-      
-      for (const item of items) {
-        await new Promise<void>((resolve, reject) => {
-          const request = store.put({ ...item, sessionTempId });
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        });
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Failed to save session items offline:', error);
-      return false;
-    }
-  }, []);
-
-  // Save session sets offline (for OFF-WALL sessions)
-  const saveSessionSetsOffline = useCallback(async (sessionItemId: string, sets: Omit<PendingSessionSet, 'sessionItemId'>[]) => {
-    try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.pendingSessionSets, 'readwrite');
-      const store = tx.objectStore(STORES.pendingSessionSets);
-      
-      for (const set of sets) {
-        await new Promise<void>((resolve, reject) => {
-          const request = store.put({ ...set, sessionItemId });
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        });
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Failed to save session sets offline:', error);
-      return false;
-    }
-  }, []);
-
-  // Get all pending sessions
-  const getPendingSessions = useCallback(async (): Promise<PendingSession[]> => {
-    try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.pendingSessions, 'readonly');
-      const store = tx.objectStore(STORES.pendingSessions);
-      
-      return new Promise((resolve, reject) => {
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => reject(request.error);
-      });
-    } catch (error) {
-      console.error('Failed to get pending sessions:', error);
-      return [];
-    }
-  }, []);
-
-  // Get boulder logs for a session
-  const getLogsForSession = useCallback(async (sessionTempId: string): Promise<PendingBoulderLog[]> => {
-    try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.pendingLogs, 'readonly');
-      const store = tx.objectStore(STORES.pendingLogs);
-      const index = store.index('sessionTempId');
-      
-      return new Promise((resolve, reject) => {
-        const request = index.getAll(sessionTempId);
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => reject(request.error);
-      });
-    } catch (error) {
-      console.error('Failed to get logs for session:', error);
-      return [];
-    }
-  }, []);
-
-  // Get session items for an offline session
-  const getSessionItemsForSession = useCallback(async (sessionTempId: string): Promise<PendingSessionItem[]> => {
-    try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.pendingSessionItems, 'readonly');
-      const store = tx.objectStore(STORES.pendingSessionItems);
-      const index = store.index('sessionTempId');
-      
-      return new Promise((resolve, reject) => {
-        const request = index.getAll(sessionTempId);
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => reject(request.error);
-      });
-    } catch (error) {
-      console.error('Failed to get session items:', error);
-      return [];
-    }
-  }, []);
-
-  // Get session sets for an item
-  const getSessionSetsForItem = useCallback(async (sessionItemId: string): Promise<PendingSessionSet[]> => {
-    try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.pendingSessionSets, 'readonly');
-      const store = tx.objectStore(STORES.pendingSessionSets);
-      const index = store.index('sessionItemId');
-      
-      return new Promise((resolve, reject) => {
-        const request = index.getAll(sessionItemId);
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => reject(request.error);
-      });
-    } catch (error) {
-      console.error('Failed to get session sets:', error);
-      return [];
-    }
-  }, []);
-
-  // Delete a pending session and its logs/items/sets
-  const deletePendingSession = useCallback(async (tempId: string) => {
-    try {
-      const db = await openDB();
-      
-      // Delete session
-      const sessionTx = db.transaction(STORES.pendingSessions, 'readwrite');
-      const sessionStore = sessionTx.objectStore(STORES.pendingSessions);
-      await new Promise<void>((resolve, reject) => {
-        const request = sessionStore.delete(tempId);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      });
-      
-      // Delete associated boulder logs
-      const logsTx = db.transaction(STORES.pendingLogs, 'readwrite');
-      const logsStore = logsTx.objectStore(STORES.pendingLogs);
-      const logsIndex = logsStore.index('sessionTempId');
-      
-      const logs = await new Promise<PendingBoulderLog[]>((resolve, reject) => {
-        const request = logsIndex.getAll(tempId);
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => reject(request.error);
-      });
-      
-      for (const log of logs) {
-        await new Promise<void>((resolve, reject) => {
-          const request = logsStore.delete(log.id);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        });
-      }
-
-      // Delete associated session items and their sets
-      const itemsTx = db.transaction(STORES.pendingSessionItems, 'readwrite');
-      const itemsStore = itemsTx.objectStore(STORES.pendingSessionItems);
-      const itemsIndex = itemsStore.index('sessionTempId');
-      
-      const items = await new Promise<PendingSessionItem[]>((resolve, reject) => {
-        const request = itemsIndex.getAll(tempId);
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => reject(request.error);
-      });
-
-      const setsTx = db.transaction(STORES.pendingSessionSets, 'readwrite');
-      const setsStore = setsTx.objectStore(STORES.pendingSessionSets);
-      const setsIndex = setsStore.index('sessionItemId');
-
-      for (const item of items) {
-        // Delete sets for this item
-        const sets = await new Promise<PendingSessionSet[]>((resolve, reject) => {
-          const request = setsIndex.getAll(item.id);
-          request.onsuccess = () => resolve(request.result || []);
-          request.onerror = () => reject(request.error);
-        });
-
-        for (const set of sets) {
-          await new Promise<void>((resolve, reject) => {
-            const request = setsStore.delete(set.id);
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-          });
-        }
-
-        // Delete the item
-        await new Promise<void>((resolve, reject) => {
-          const request = itemsStore.delete(item.id);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        });
-      }
-      
-      await refreshPendingCount();
-      return true;
-    } catch (error) {
-      console.error('Failed to delete pending session:', error);
-      return false;
-    }
-  }, [refreshPendingCount]);
-
-  // Cache data for offline use
-  const cacheData = useCallback(async (key: string, data: unknown) => {
-    try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.cachedData, 'readwrite');
-      const store = tx.objectStore(STORES.cachedData);
-      
-      await new Promise<void>((resolve, reject) => {
-        const request = store.put({ key, data, cachedAt: Date.now() });
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      });
-      
-      return true;
-    } catch (error) {
-      console.error('Failed to cache data:', error);
-      return false;
-    }
-  }, []);
-
-  // Get cached data
+      store.put({ ...session, ...updates, tempId, synced: false });
+    })), []);
+  const deletePendingSession = useCallback((tempId: string) =>
+    writeOffline(() => transact(SESSION_STORES, 'readwrite', async tx => {
+      await removeDetails(tx, tempId);
+      tx.objectStore('pendingSessions').delete(tempId);
+    })), []);
+  const cacheData = useCallback((key: string, data: unknown) =>
+    writeOffline(() => transact(['cachedData'], 'readwrite', async tx => {
+      tx.objectStore('cachedData').put({ key, data, cachedAt: Date.now() });
+    })), []);
   const getCachedData = useCallback(async <T>(key: string): Promise<T | null> => {
     try {
-      const db = await openDB();
-      const tx = db.transaction(STORES.cachedData, 'readonly');
-      const store = tx.objectStore(STORES.cachedData);
-      
-      return new Promise((resolve, reject) => {
-        const request = store.get(key);
-        request.onsuccess = () => resolve(request.result?.data || null);
-        request.onerror = () => reject(request.error);
+      return await transact(['cachedData'], 'readonly', async tx => {
+        const record = await requestResult(tx.objectStore('cachedData').get(key));
+        return record?.data ?? null;
       });
     } catch (error) {
       console.error('Failed to get cached data:', error);
       return null;
     }
   }, []);
-
   return {
-    isOnline,
-    pendingCount,
-    isSyncing,
-    setIsSyncing,
-    saveSessionOffline,
-    updateSessionOffline,
-    saveBoulderLogsOffline,
-    saveSessionItemsOffline,
-    saveSessionSetsOffline,
-    getPendingSessions,
-    getLogsForSession,
-    getSessionItemsForSession,
-    getSessionSetsForItem,
-    deletePendingSession,
-    cacheData,
-    getCachedData,
-    refreshPendingCount,
+    isOnline, pendingCount, isSyncing, setIsSyncing, saveSessionOffline, updateSessionOffline,
+    saveBoulderLogsOffline, saveSessionItemsOffline, saveSessionSetsOffline, completeSessionOffline,
+    getPendingSessions, getLogsForSession, getSessionItemsForSession, getSessionSetsForItem,
+    deletePendingSession, cacheData, getCachedData, refreshPendingCount,
   };
 }
-
-// Generate a temporary ID for offline sessions
 export function generateTempId(): string {
-  return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `temp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }

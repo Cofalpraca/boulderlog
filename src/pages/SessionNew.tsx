@@ -95,7 +95,7 @@ export default function SessionNew() {
       } else {
         const tempId = generateTempId();
         
-        await saveSessionOffline({
+        const saved = await saveSessionOffline({
           id: '',
           tempId,
           user_id: user.id,
@@ -103,6 +103,7 @@ export default function SessionNew() {
           date_start: new Date().toISOString(),
           gym_id: selectedGym?.id,
         });
+        if (!saved) throw new Error('Failed to create offline session');
         
         toast.info(t('session.startingOffline'), {
           description: t('session.willSyncOnline'),

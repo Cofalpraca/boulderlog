@@ -4,10 +4,10 @@ import "./index.css";
 import i18n from "./i18n"; // Initialize i18n
 
 // Register Service Worker for PWA
-if ('serviceWorker' in navigator) {
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
+      const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
       console.log('SW registered:', registration.scope);
       
       // Listen for updates

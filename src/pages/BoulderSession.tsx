@@ -48,7 +48,7 @@ export default function BoulderSession() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const { isOnline, cacheData, getCachedData, saveSessionOffline, saveBoulderLogsOffline, deletePendingSession, getPendingSessions } = useOfflineStorage();
+  const { isOnline, cacheData, getCachedData, completeSessionOffline, deletePendingSession, getPendingSessions } = useOfflineStorage();
   
   // Check if this is an offline session
   const isOfflineSession = sessionId?.startsWith('offline-');
@@ -390,30 +390,23 @@ export default function BoulderSession() {
     try {
       if (isOfflineSession && offlineTempId) {
         // OFFLINE: Save to IndexedDB
-        const sessions = await getPendingSessions();
-        const pendingSession = sessions.find(s => s.tempId === offlineTempId);
-        
-        if (pendingSession) {
-          await saveSessionOffline({
-            ...pendingSession,
-            date_end: new Date().toISOString(),
-            notes: sessionNotes || undefined,
-            rpe,
-            finger_fatigue: fingerFatigue,
-            pain_flag: painFlag,
-          });
+        const logsWithIds: Omit<PendingBoulderLog, 'sessionTempId'>[] = logsToSave.map((log, idx) => ({
+          id: `${offlineTempId}_log_${idx}`,
+          grade_raw: log.grade_raw,
+          grade_type: log.grade_type,
+          count: 1,
+          tags: log.tags || undefined,
+          notes: log.notes || undefined,
+        }));
           
-          const logsWithIds: Omit<PendingBoulderLog, 'sessionTempId'>[] = logsToSave.map((log, idx) => ({
-            id: `${offlineTempId}_log_${idx}`,
-            grade_raw: log.grade_raw,
-            grade_type: log.grade_type,
-            count: 1,
-            tags: log.tags || undefined,
-            notes: log.notes || undefined,
-          }));
-          
-          await saveBoulderLogsOffline(offlineTempId, logsWithIds);
-        }
+        const saved = await completeSessionOffline(offlineTempId, {
+          date_end: new Date().toISOString(), notes: sessionNotes || undefined,
+          rpe, finger_fatigue: fingerFatigue, pain_flag: painFlag,
+          pain_level: painFlag ? painLevel : null, pain_area: painFlag ? painArea : null,
+          pain_note: painFlag ? (painNote || null) : null,
+          failed_attempts: failedAttempts, flash_count: flashCount,
+        }, { logs: logsWithIds });
+        if (!saved) throw new Error('Failed to save session offline');
         
         sonnerToast.success('Session saved offline', {
           description: `${totalBoulders} boulders logged. Will sync when online.`,

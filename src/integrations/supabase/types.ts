@@ -464,6 +464,7 @@ export type Database = {
           flash_count: number | null
           id: string
           notes: string | null
+          offline_id: string | null
           pain_area: string | null
           pain_flag: boolean | null
           pain_level: number | null
@@ -484,6 +485,7 @@ export type Database = {
           flash_count?: number | null
           id?: string
           notes?: string | null
+          offline_id?: string | null
           pain_area?: string | null
           pain_flag?: boolean | null
           pain_level?: number | null
@@ -504,6 +506,7 @@ export type Database = {
           flash_count?: number | null
           id?: string
           notes?: string | null
+          offline_id?: string | null
           pain_area?: string | null
           pain_flag?: boolean | null
           pain_level?: number | null
@@ -730,7 +733,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      save_completed_session: {
+        Args: { p_session: Json; p_items?: Json; p_logs?: Json; p_offline_id?: string }
+        Returns: string
+      }
     }
     Enums: {
       exercise_category: "fingers" | "strength" | "core" | "mobility"

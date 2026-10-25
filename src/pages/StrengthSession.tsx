@@ -79,7 +79,7 @@ export default function StrengthSession() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const { isOnline, cacheData, getCachedData, updateSessionOffline, saveSessionItemsOffline, saveSessionSetsOffline } = useOfflineStorage();
+  const { isOnline, cacheData, getCachedData, completeSessionOffline, deletePendingSession } = useOfflineStorage();
   
   const isOfflineSession = sessionId?.startsWith('offline-');
   const offlineTempId = isOfflineSession ? sessionId.replace('offline-', '') : null;
@@ -196,6 +196,7 @@ export default function StrengthSession() {
         id: item.id,
         exercise_id: item.exercise_id!,
         exercise: item.exercises as Exercise,
+        protocol_id: item.protocol_id || undefined,
         order_index: item.order_index,
         sets: (item.session_sets as SessionSet[] || []).map(s => ({
           id: s.id,
@@ -316,93 +317,54 @@ export default function StrengthSession() {
     setSaving(true);
 
     try {
+      const metadata = {
+        date_end: new Date().toISOString(),
+        notes: sessionNotes || null,
+        rpe, finger_fatigue: fingerFatigue, pain_flag: painFlag,
+        pain_level: painFlag ? painLevel : null,
+        pain_area: painFlag ? painArea : null,
+        pain_note: painFlag ? (painNote || null) : null,
+      };
       if (isOfflineSession && offlineTempId) {
-        // Offline: Save to IndexedDB
-        const itemsToSave = sessionItems.map((item, idx) => ({
+        const items = sessionItems.map((item, idx) => ({
           id: generateTempId(),
           exercise_id: item.exercise_id,
           exercise_name: item.exercise.name,
           exercise_category: item.exercise.category,
+          protocol_id: item.protocol_id,
           order_index: idx,
+          sets: item.sets.filter(s => s.completed).map(s => ({
+            id: generateTempId(), set_no: s.set_no, reps: s.reps,
+            duration_sec: s.duration_sec, weight_kg: s.weight_kg, rpe: s.rpe,
+          })),
         }));
-        
-        await saveSessionItemsOffline(offlineTempId, itemsToSave);
-        
-        for (let i = 0; i < sessionItems.length; i++) {
-          const item = sessionItems[i];
-          const setsToSave = item.sets.filter(s => s.completed).map(s => ({
-            id: generateTempId(),
-            set_no: s.set_no,
-            reps: s.reps,
-            duration_sec: s.duration_sec,
-            weight_kg: s.weight_kg,
-            rpe: s.rpe,
-          }));
-          await saveSessionSetsOffline(itemsToSave[i].id, setsToSave);
-        }
-        
-        await updateSessionOffline(offlineTempId, {
-          date_end: new Date().toISOString(),
-          notes: sessionNotes || undefined,
-          rpe,
-          finger_fatigue: fingerFatigue,
-          pain_flag: painFlag,
-        });
-        
-        toast({ 
-          title: 'Session saved offline!', 
-          description: 'Will sync when back online' 
-        });
+        const saved = await completeSessionOffline(offlineTempId, {
+          ...metadata, notes: sessionNotes || undefined,
+        }, { items });
+        if (!saved) throw new Error('Failed to save session offline');
+        clearSessionState();
+        toast({ title: 'Session saved offline!', description: 'Will sync when back online' });
         navigate('/');
       } else if (sessionId) {
-        // Online: Save to Supabase
-        await supabase.from('session_items').delete().eq('session_id', sessionId);
-        
-        for (let i = 0; i < sessionItems.length; i++) {
-          const item = sessionItems[i];
-          const { data: insertedItem, error: itemError } = await supabase
-            .from('session_items')
-            .insert({
-              session_id: sessionId,
-              exercise_id: item.exercise_id,
-              order_index: i,
-            })
-            .select('id')
-            .single();
-          
-          if (itemError || !insertedItem) continue;
-
-          const setsToInsert = item.sets
-            .filter(s => s.completed)
-            .map(s => ({
-              session_item_id: insertedItem.id,
-              set_no: s.set_no,
-              reps: s.reps,
-              duration_sec: s.duration_sec,
-              weight_kg: s.weight_kg,
-              rpe: s.rpe,
-            }));
-          
-          if (setsToInsert.length > 0) {
-            await supabase.from('session_sets').insert(setsToInsert);
-          }
+        const { data, error } = await supabase.rpc('save_completed_session', {
+          p_session: { ...metadata, id: sessionId, user_id: user.id, status: 'completed' },
+          p_items: sessionItems.map((item, i) => ({
+            exercise_id: item.exercise_id, protocol_id: item.protocol_id ?? null, order_index: i,
+            sets: item.sets.filter(s => s.completed).map(s => ({
+              set_no: s.set_no, reps: s.reps, duration_sec: s.duration_sec,
+              weight_kg: s.weight_kg, rpe: s.rpe,
+            })),
+          })),
+        });
+        if (error) throw error;
+        if (!data) throw new Error('Server did not confirm the saved session');
+        clearSessionState();
+        for (const key of ['sessions', 'session_history', 'dashboard_off_wall']) {
+          void queryClient.invalidateQueries({ queryKey: [key] });
         }
-
-        await supabase.from('sessions').update({
-          date_end: new Date().toISOString(),
-          notes: sessionNotes || null,
-          rpe,
-          finger_fatigue: fingerFatigue,
-          pain_flag: painFlag,
-          pain_level: painFlag ? painLevel : null,
-          pain_area: painFlag ? painArea : null,
-          pain_note: painFlag ? (painNote || null) : null,
-        }).eq('id', sessionId);
-
-        await queryClient.invalidateQueries({ queryKey: ['sessions'] });
-        toast({ 
-          title: 'Session saved!', 
-          description: `${totalSets} sets completed across ${sessionItems.length} exercises` 
+        toast({
+          title: 'Session saved!',
+          description: `${totalSets} sets completed across ${sessionItems.length} exercises`,
         });
         navigate('/analytics');
       }
@@ -424,6 +386,9 @@ export default function StrengthSession() {
 
   const confirmDiscard = async () => {
     setExitConfirmOpen(false);
+    if (isOfflineSession && offlineTempId) {
+      if (!await deletePendingSession(offlineTempId)) return;
+    }
     clearSessionState();
     if (!isOfflineSession && sessionId) {
       await supabase.from('sessions').delete().eq('id', sessionId);

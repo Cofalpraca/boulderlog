@@ -161,6 +161,27 @@ BoulderLog can be installed on mobile devices:
 
 The application runs in full-screen mode and supports offline session creation with automatic sync.
 
+The production build generates `dist/sw.js` from `src/service-worker.js` and
+precaches the emitted application assets. Service worker registration is disabled
+in development. PWA icons are tracked in `public/`; on Windows they can be
+regenerated from the existing favicon with `powershell -File scripts/generate-pwa-icons.ps1`.
+
+Offline sessions stay local while active. Completion saves metadata and all logs
+or exercises/sets in one IndexedDB transaction. Synchronization uses the
+`save_completed_session` RPC, which writes the complete session in one PostgreSQL
+transaction and deduplicates retries by `(user_id, offline_id)`. Local data is
+removed only after the RPC confirms success.
+
+Apply `supabase/migrations/20261025120000_atomic_session_save.sql` before deploying
+the updated frontend. It also provides the transaction used to complete online
+OFF-WALL sessions. The existing Supabase migrations workflow applies it on main.
+
+Regression coverage is included in `npm test`: PostgreSQL transaction rollback,
+RLS/ownership checks (PGlite with an isolated schema and the real lifecycle trigger
+and RPC migration), IndexedDB failures and retry, strength completion UI, and the
+generated production worker running against a simulated network/cache. These
+tests do not connect to or modify the production Supabase project.
+
 ---
 
 ## Database

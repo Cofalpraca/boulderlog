@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { WifiOff, Cloud, Loader2, CheckCircle2 } from 'lucide-react';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { syncOfflineSessions } from '@/lib/syncOfflineSessions';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function OfflineIndicator() {
@@ -16,11 +17,14 @@ export function OfflineIndicator() {
     isSyncing, 
     setIsSyncing,
     getPendingSessions, 
-    getLogsForSession, 
+    getLogsForSession,
+    getSessionItemsForSession,
+    getSessionSetsForItem,
     deletePendingSession,
     refreshPendingCount,
   } = useOfflineStorage();
   
+  const syncInProgress = useRef(false);
   const [showBanner, setShowBanner] = useState(false);
   const [wasOffline, setWasOffline] = useState(false);
 
@@ -29,7 +33,8 @@ export function OfflineIndicator() {
     if (!isOnline) {
       setWasOffline(true);
       setShowBanner(true);
-    } else if (wasOffline && pendingCount > 0) {
+    } else if (pendingCount > 0) {
+      setWasOffline(true);
       setShowBanner(true);
     } else if (pendingCount === 0 && wasOffline) {
       // Hide after successful sync
@@ -41,92 +46,42 @@ export function OfflineIndicator() {
     }
   }, [isOnline, pendingCount, wasOffline]);
 
-  // Auto-sync when coming back online
-  useEffect(() => {
-    if (isOnline && pendingCount > 0 && !isSyncing && user) {
-      syncPendingSessions();
-    }
-  }, [isOnline, pendingCount, user]);
-
-  const syncPendingSessions = async () => {
-    if (!user || isSyncing) return;
-    
+  const syncPendingSessions = useCallback(async () => {
+    if (!user || syncInProgress.current) return;
+    syncInProgress.current = true;
     setIsSyncing(true);
-    
     try {
-      const pendingSessions = await getPendingSessions();
-      let syncedCount = 0;
-      
-      for (const session of pendingSessions) {
-        if (session.synced) continue;
-        
-        try {
-          // Create the session in Supabase
-          const { data: newSession, error: sessionError } = await supabase
-            .from('sessions')
-            .insert({
-              user_id: session.user_id,
-              session_type: session.session_type,
-              subtype: session.subtype || null,
-              date_start: session.date_start,
-              date_end: session.date_end || null,
-              notes: session.notes || null,
-              rpe: session.rpe || null,
-              finger_fatigue: session.finger_fatigue || null,
-              pain_flag: session.pain_flag || null,
-            })
-            .select()
-            .single();
-          
-          if (sessionError) throw sessionError;
-          
-          // Link gym if present
-          if (session.gym_id && newSession) {
-            await supabase.from('session_gyms').insert({
-              session_id: newSession.id,
-              gym_id: session.gym_id,
-            });
-          }
-          
-          // Get and insert boulder logs
-          const logs = await getLogsForSession(session.tempId);
-          if (logs.length > 0 && newSession) {
-            const logsToInsert = logs.map(log => ({
-              session_id: newSession.id,
-              grade_raw: log.grade_raw,
-              grade_type: log.grade_type as 'font' | 'v_scale' | 'colors' | 'numeric',
-              count: log.count,
-              tags: log.tags || null,
-              notes: log.notes || null,
-            }));
-            
-            await supabase.from('boulder_logs').insert(logsToInsert);
-          }
-          
-          // Delete the pending session after successful sync
-          await deletePendingSession(session.tempId);
-          syncedCount++;
-        } catch (error) {
-          console.error('Failed to sync session:', session.tempId, error);
-        }
-      }
-      
+      const { syncedCount, failedCount } = await syncOfflineSessions(user.id, {
+        getPendingSessions, getLogsForSession, getSessionItemsForSession,
+        getSessionSetsForItem, deletePendingSession,
+      }, supabase);
       if (syncedCount > 0) {
         toast.success(`Synced ${syncedCount} offline session${syncedCount > 1 ? 's' : ''}`);
-        queryClient.invalidateQueries({ queryKey: ['sessions'] });
-        queryClient.invalidateQueries({ queryKey: ['dashboard_on_wall'] });
-        queryClient.invalidateQueries({ queryKey: ['dashboard_off_wall'] });
-        queryClient.invalidateQueries({ queryKey: ['session_history'] });
+        for (const key of ['sessions', 'dashboard_on_wall', 'dashboard_off_wall', 'session_history']) {
+          void queryClient.invalidateQueries({ queryKey: [key] });
+        }
       }
-      
-      await refreshPendingCount();
+      if (failedCount > 0) toast.error('Some sessions could not be synced. Your offline data is safe; try again.');
     } catch (error) {
       console.error('Sync failed:', error);
-      toast.error('Failed to sync some sessions');
+      toast.error('Failed to sync sessions. Your offline data is safe; try again.');
     } finally {
+      await refreshPendingCount();
+      syncInProgress.current = false;
       setIsSyncing(false);
     }
-  };
+  }, [user, getPendingSessions, getLogsForSession, getSessionItemsForSession,
+    getSessionSetsForItem, deletePendingSession, queryClient, refreshPendingCount, setIsSyncing]);
+
+  useEffect(() => {
+    if (isOnline && pendingCount > 0) void syncPendingSessions();
+  }, [isOnline, pendingCount, syncPendingSessions]);
+
+  useEffect(() => {
+    const handleSync = () => { if (isOnline) void syncPendingSessions(); };
+    window.addEventListener('sw-sync-sessions', handleSync);
+    return () => window.removeEventListener('sw-sync-sessions', handleSync);
+  }, [isOnline, syncPendingSessions]);
 
   if (!showBanner) return null;
 
