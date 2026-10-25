@@ -10,6 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:report": "node scripts/testing-report.mjs",
+    "test:report:verify": "node scripts/testing/verify-report.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {

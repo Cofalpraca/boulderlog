@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "runId": "2026-10-25T16-12-49-169Z_7cf8db65",
+  "startedAt": "2026-10-25T16:12:49.169Z",
+  "timezone": "Europe/Warsaw",
+  "commit": "7cf8db659eb627a0e2a3014c2a3ad50d1e5875e0",
+  "branch": "main",
+  "gitStatusBeforeRun": "M  .gitignore\n M eslint.config.js\n M package.json\n?? docs/\n?? scripts/testing-report.mjs\n?? scripts/testing/",
+  "node": "v22.14.0",
+  "npm": "npm/10.9.2 node/v22.14.0 win32 x64 workspaces/false",
+  "system": {
+    "platform": "win32",
+    "release": "10.0.26200",
+    "architecture": "x64",
+    "logicalCpus": 16,
+    "totalMemoryBytes": 17042837504
+  },
+  "versions": {
+    "vitest": "3.2.4",
+    "vite": "5.4.19",
+    "jsdom": "20.0.3",
+    "@testing-library/react": "16.3.1",
+    "@electric-sql/pglite": "0.5.11",
+    "fake-indexeddb": "6.2.6",
+    "typescript": "5.8.3",
+    "eslint": "9.32.0"
+  },
+  "testEnvironment": {
+    "default": "jsdom",
+    "overrides": "node dla atomicSessionSave.test.ts i pwa.test.ts",
+    "database": "PGlite; izolowany schemat testowy, lokalny PostgreSQL/WASM, testowe role RLS",
+    "indexedDB": "fake-indexeddb; bez rzeczywistej przeglądarki",
+    "serviceWorker": "node:vm; symulowane CacheStorage i sieć"
+  },
+  "sourceManifestHash": "a4fef6bc84574c4140d50f8173331d1284c57079a789312b309417ee8f3b781e",
+  "commands": [
+    {
+      "name": "test",
+      "command": "npm test -- --reporter=default --reporter=json --outputFile.json=<przebieg>/vitest-results.json --includeTaskLocation",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+        "test",
+        "--",
+        "--reporter=default",
+        "--reporter=json",
+        "--outputFile.json=docs/testing/history/2026-10-25T16-12-49-169Z_7cf8db65/vitest-results.json",
+        "--includeTaskLocation"
+      ],
+      "startedAt": "2026-10-25T16:12:49.982Z",
+      "exitCode": 0,
+      "signal": null,
+      "error": null,
+      "finishedAt": "2026-10-25T16:13:14.787Z",
+      "durationMs": 24805
+    },
+    {
+      "name": "build",
+      "command": "npm run build",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+        "run",
+        "build"
+      ],
+      "startedAt": "2026-10-25T16:13:14.789Z",
+      "exitCode": 0,
+      "signal": null,
+      "error": null,
+      "finishedAt": "2026-10-25T16:13:29.103Z",
+      "durationMs": 14314
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+        "run",
+        "lint"
+      ],
+      "startedAt": "2026-10-25T16:13:29.105Z",
+      "exitCode": 1,
+      "signal": null,
+      "error": null,
+      "finishedAt": "2026-10-25T16:13:35.108Z",
+      "durationMs": 6003
+    }
+  ],
+  "commandEnvironment": {
+    "NO_COLOR": "1",
+    "FORCE_COLOR": "0"
+  },
+  "hostTimezone": "Europe/Warsaw",
+  "npmVersion": "10.9.2",
+  "finishedAt": "2026-10-25T16:13:35.110Z"
+}

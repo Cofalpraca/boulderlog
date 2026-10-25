@@ -1,0 +1,2 @@
+# Preserve test evidence and its recorded SHA-256 hashes byte for byte.
+docs/testing/** -text

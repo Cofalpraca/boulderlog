@@ -1,0 +1,10 @@
+{
+  "verifiedAt": "2026-10-25T17:17:53.042Z",
+  "runId": "2026-10-25T16-12-49-169Z_7cf8db65",
+  "automaticCasesVerified": 292,
+  "manualProtocolsVerified": 36,
+  "controls": 3,
+  "archivesVerified": 3,
+  "status": "PASS",
+  "scope": "Spójność i integralność dokumentacji; nie jest ponownym wykonaniem testów aplikacji ani manualnych."
+}

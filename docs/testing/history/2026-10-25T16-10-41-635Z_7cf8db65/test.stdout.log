@@ -1,0 +1,547 @@
+
+> vite_react_shadcn_ts@0.0.0 test
+> vitest run --reporter=default --reporter=json --outputFile.json=docs/testing/history/2026-10-25T16-10-41-635Z_7cf8db65/vitest-results.json --includeTaskLocation
+
+
+ RUN  v3.2.4 C:/Users/barte/Desktop/Wszystko/Repos/Repo Inzynierka/boulderlog
+
+ ✓ src/test/atomicSessionSave.test.ts (11 tests) 3914ms
+ ✓ src/test/userLevelCache.test.ts (3 tests) 55ms
+ ✓ src/test/listPager.test.ts (11 tests) 18ms
+ ✓ src/test/auth.test.ts (13 tests) 20ms
+ ✓ src/test/sessionPersistence.test.ts (12 tests) 22ms
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Basic zone distribution with explicit user level > should classify grades below userLevel - 1 as Comfort
+[zones] User Level: V6.00
+[zones] Thresholds: Comfort ≤ V5.0, Growth (5.0, 7.5], Limit > 7.5
+[zones] V3 → V3.0 × 10 → COMFORT
+[zones] V6 → V6.0 × 5 → GROWTH
+[zones] Distribution: Comfort=10, Growth=5, Limit=0 (total=15, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Basic zone distribution with explicit user level > should classify grades above userLevel + 1.5 as Limit
+[zones] User Level: V6.00
+[zones] Thresholds: Comfort ≤ V5.0, Growth (5.0, 7.5], Limit > 7.5
+[zones] V5 → V5.0 × 3 → COMFORT
+[zones] V6 → V6.0 × 5 → GROWTH
+[zones] V8 → V8.0 × 2 → LIMIT
+[zones] Distribution: Comfort=3, Growth=5, Limit=2 (total=10, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Basic zone distribution with explicit user level > should have V7 in Growth when userLevel is V6 (within +1.5 threshold)
+[zones] User Level: V6.00
+[zones] Thresholds: Comfort ≤ V5.0, Growth (5.0, 7.5], Limit > 7.5
+[zones] V7 → V7.0 × 10 → GROWTH
+[zones] Distribution: Comfort=0, Growth=10, Limit=0 (total=10, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Real-world example: User at 6c/V5-V6 level > should produce balanced distribution for typical climbing session
+[zones] User Level: V6.00
+[zones] Thresholds: Comfort ≤ V5.0, Growth (5.0, 7.5], Limit > 7.5
+[zones] 5a → V1.0 × 2 → COMFORT
+[zones] 5c → V2.0 × 2 → COMFORT
+[zones] 6a → V3.0 × 3 → COMFORT
+[zones] 6a+ → V4.0 × 5 → COMFORT
+[zones] 6b → V5.0 × 8 → COMFORT
+[zones] 6c → V6.0 × 10 → GROWTH
+[zones] 6c+ → V6.0 × 6 → GROWTH
+[zones] 7a → V7.0 × 4 → GROWTH
+[zones] 7a+ → V8.0 × 2 → LIMIT
+[zones] 7b → V9.0 × 1 → LIMIT
+[zones] Distribution: Comfort=20, Growth=20, Limit=3 (total=43, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Regression test: Original bug scenario > should NOT classify 80%+ as Growth when many grades are below user level
+[zones] User Level: V6.00
+[zones] Thresholds: Comfort ≤ V5.0, Growth (5.0, 7.5], Limit > 7.5
+[zones] 4 → V0.0 × 10 → COMFORT
+[zones] 5 → V1.0 × 20 → COMFORT
+[zones] 5+ → V2.0 × 25 → COMFORT
+[zones] 5a → V1.0 × 30 → COMFORT
+[zones] 5b → V1.0 × 35 → COMFORT
+[zones] 5c → V2.0 × 40 → COMFORT
+[zones] 6a → V3.0 × 50 → COMFORT
+[zones] 6a+ → V4.0 × 45 → COMFORT
+[zones] 6b → V5.0 × 40 → COMFORT
+[zones] 6b+ → V5.0 × 30 → COMFORT
+[zones] 6c → V6.0 × 25 → GROWTH
+[zones] 6c+ → V6.0 × 20 → GROWTH
+[zones] 7a → V7.0 × 15 → GROWTH
+[zones] 7a+ → V8.0 × 6 → LIMIT
+[zones] 7b → V9.0 × 2 → LIMIT
+[zones] Distribution: Comfort=325, Growth=60, Limit=8 (total=393, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Sanity checks > should be impossible for Growth > 70% with large diverse volume
+[zones] User Level: V5.00
+[zones] Thresholds: Comfort ≤ V4.0, Growth (4.0, 6.5], Limit > 6.5
+[zones] V0 → V0.0 × 10 → COMFORT
+[zones] V1 → V1.0 × 10 → COMFORT
+[zones] V2 → V2.0 × 10 → COMFORT
+[zones] V3 → V3.0 × 10 → COMFORT
+[zones] V4 → V4.0 × 10 → COMFORT
+[zones] V5 → V5.0 × 10 → GROWTH
+[zones] V6 → V6.0 × 10 → GROWTH
+[zones] V7 → V7.0 × 10 → LIMIT
+[zones] V8 → V8.0 × 10 → LIMIT
+[zones] V9 → V9.0 × 10 → LIMIT
+[zones] Distribution: Comfort=50, Growth=20, Limit=30 (total=100, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Sanity checks > should have Comfort > 0 for users with diverse climbing history
+[zones] User Level: V6.00
+[zones] Thresholds: Comfort ≤ V5.0, Growth (5.0, 7.5], Limit > 7.5
+[zones] V2 → V2.0 × 5 → COMFORT
+[zones] V5 → V5.0 × 10 → COMFORT
+[zones] V7 → V7.0 × 3 → GROWTH
+[zones] Distribution: Comfort=15, Growth=3, Limit=0 (total=18, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Sanity checks > should have Limit < Growth in typical session
+[zones] User Level: V6.00
+[zones] Thresholds: Comfort ≤ V5.0, Growth (5.0, 7.5], Limit > 7.5
+[zones] V4 → V4.0 × 5 → COMFORT
+[zones] V6 → V6.0 × 15 → GROWTH
+[zones] V8 → V8.0 × 3 → LIMIT
+[zones] Distribution: Comfort=5, Growth=15, Limit=3 (total=23, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Edge cases > should handle empty mappings with V-scale fallback
+[zones] User Level: V5.00
+[zones] Thresholds: Comfort ≤ V4.0, Growth (4.0, 6.5], Limit > 6.5
+[zones] V5 → V5.0 × 10 → GROWTH
+[zones] Distribution: Comfort=0, Growth=10, Limit=0 (total=10, unmapped=0)
+
+ ✓ src/test/importHistory.test.ts (13 tests) 21ms
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Edge cases > should use session max as fallback when userLevel not provided
+[zones] No userLevel provided, using session max (V6) as fallback
+[zones] User Level: V6.00
+[zones] Thresholds: Comfort ≤ V5.0, Growth (5.0, 7.5], Limit > 7.5
+[zones] V3 → V3.0 × 5 → COMFORT
+[zones] V6 → V6.0 × 3 → GROWTH
+[zones] Distribution: Comfort=5, Growth=3, Limit=0 (total=8, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Edge cases > should handle all boulders at exact user level
+[zones] User Level: V5.00
+[zones] Thresholds: Comfort ≤ V4.0, Growth (4.0, 6.5], Limit > 6.5
+[zones] V5 → V5.0 × 20 → GROWTH
+[zones] Distribution: Comfort=0, Growth=20, Limit=0 (total=20, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Color/Numeric grading systems > should work with color grades using V-scale mappings
+[zones] User Level: V5.00
+[zones] Thresholds: Comfort ≤ V4.0, Growth (4.0, 6.5], Limit > 6.5
+[zones] Yellow → V0.5 × 5 → COMFORT
+[zones] Green → V2.5 × 10 → COMFORT
+[zones] Blue → V4.5 × 8 → GROWTH
+[zones] Purple → V6.5 × 3 → GROWTH
+[zones] Distribution: Comfort=15, Growth=11, Limit=0 (total=26, unmapped=0)
+
+stdout | src/test/developmentZones.test.ts > computeSessionZones - User Level Relative Classification > Color/Numeric grading systems > should work with numeric grades
+[zones] User Level: V5.00
+[zones] Thresholds: Comfort ≤ V4.0, Growth (4.0, 6.5], Limit > 6.5
+[zones] 1 → V0.0 × 5 → COMFORT
+[zones] 2 → V1.5 × 10 → COMFORT
+[zones] 3 → V3.5 × 8 → COMFORT
+[zones] 4 → V5.5 × 6 → GROWTH
+[zones] 5 → V7.5 × 2 → LIMIT
+[zones] Distribution: Comfort=23, Growth=6, Limit=2 (total=31, unmapped=0)
+
+ ✓ src/test/developmentZones.test.ts (14 tests) 37ms
+stdout | src/lib/analytics.test.ts > Development Zones > computeSessionZones > returns zeros for empty mappings with unmappable grades
+[zones] Unmapped grade: "UnknownGrade"
+[zones] No mapped boulders (5 unmapped)
+
+stdout | src/lib/analytics.test.ts > Development Zones > computeSessionZones > classifies Font grades correctly using canonical table
+[zones] User Level: V5.00
+[zones] Thresholds: Comfort ≤ V4.0, Growth (4.0, 6.5], Limit > 6.5
+[zones] 5a → V1.0 × 5 → COMFORT
+[zones] 6b → V5.0 × 5 → GROWTH
+[zones] 7b → V9.0 × 5 → LIMIT
+[zones] Distribution: Comfort=5, Growth=5, Limit=5 (total=15, unmapped=0)
+
+stdout | src/lib/analytics.test.ts > Development Zones > computeSessionZones > does NOT collapse all grades into Growth for mixed dataset
+[zones] User Level: V5.90
+[zones] Thresholds: Comfort ≤ V4.9, Growth (4.9, 7.4], Limit > 7.4
+[zones] 7a+ → V8.0 × 9 → LIMIT
+[zones] 7a → V7.0 × 1 → GROWTH
+[zones] 6c+ → V6.0 × 1 → GROWTH
+[zones] 6c → V6.0 × 1 → GROWTH
+[zones] 6b+ → V5.0 × 10 → GROWTH
+[zones] 6a → V3.0 × 10 → COMFORT
+[zones] Distribution: Comfort=10, Growth=13, Limit=9 (total=32, unmapped=0)
+
+ ✓ src/lib/importParser.test.ts (25 tests) 33ms
+stdout | src/lib/analytics.test.ts > Development Zones > computeSessionZones > percentages sum to 100 for mixed sessions
+[zones] No userLevel provided, using session max (V9) as fallback
+[zones] User Level: V9.00
+[zones] Thresholds: Comfort ≤ V8.0, Growth (8.0, 10.5], Limit > 10.5
+[zones] Yellow → V0.5 × 3 → COMFORT
+[zones] Green → V2.5 × 4 → COMFORT
+[zones] Blue → V4.5 × 2 → COMFORT
+[zones] Red → V6.5 × 2 → COMFORT
+[zones] Black → V9.0 × 1 → GROWTH
+[zones] Distribution: Comfort=11, Growth=1, Limit=0 (total=12, unmapped=0)
+
+stdout | src/lib/analytics.test.ts > Development Zones > computeSessionZones > uses provided baseline for zone thresholds
+[zones] User Level: V5.00
+[zones] Thresholds: Comfort ≤ V4.0, Growth (4.0, 6.5], Limit > 6.5
+[zones] Yellow → V0.5 × 5 → COMFORT
+[zones] Blue → V4.5 × 5 → GROWTH
+[zones] Black → V9.0 × 5 → LIMIT
+[zones] Distribution: Comfort=5, Growth=5, Limit=5 (total=15, unmapped=0)
+
+stdout | src/lib/analytics.test.ts > Development Zones > computeSessionZones > respects user baseline for relative zone classification
+[zones] User Level: V8.00
+[zones] Thresholds: Comfort ≤ V7.0, Growth (7.0, 9.5], Limit > 9.5
+[zones] Blue → V4.5 × 10 → COMFORT
+[zones] Distribution: Comfort=10, Growth=0, Limit=0 (total=10, unmapped=0)
+[zones] User Level: V2.00
+[zones] Thresholds: Comfort ≤ V1.0, Growth (1.0, 3.5], Limit > 3.5
+[zones] Blue → V4.5 × 10 → LIMIT
+[zones] Distribution: Comfort=0, Growth=0, Limit=10 (total=10, unmapped=0)
+
+ ✓ src/lib/volumeByGrade.test.ts (9 tests) 20ms
+stdout | src/lib/analytics.test.ts > OFF-WALL Session Handling > OFF-WALL sessions work without session_gyms
+[zones] Unmapped grade: "Yellow"
+[zones] No mapped boulders (5 unmapped)
+
+ ✓ src/lib/analytics.test.ts (24 tests) 59ms
+stdout | src/test/userLevel.test.ts > Build Grade Lookup > builds lookup map from mappings
+[userLevel] Built grade lookup: 50 total (3 gym mappings, 0 skipped)
+
+stdout | src/test/userLevel.test.ts > Build Grade Lookup > includes Font-only mappings
+[userLevel] Built grade lookup: 48 total (1 gym mappings, 0 skipped)
+
+stdout | src/test/userLevel.test.ts > Build Grade Lookup > excludes mappings without any valid bounds
+[userLevel] Skipped mapping "Red" - no valid V/Font bounds
+[userLevel] Built grade lookup: 48 total (2 gym mappings, 1 skipped)
+
+stdout | src/test/userLevel.test.ts > Build Grade Lookup > includes canonical Font grades directly (regression fix)
+[userLevel] Built grade lookup: 49 total (2 gym mappings, 0 skipped)
+
+stdout | src/test/userLevel.test.ts > Build Grade Lookup > includes V-Scale grades directly
+[userLevel] Built grade lookup: 47 total (0 gym mappings, 0 skipped)
+
+stdout | src/test/userLevel.test.ts > Build Grade Lookup > gym mappings take priority over canonical grades
+[userLevel] Built grade lookup: 47 total (1 gym mappings, 0 skipped)
+
+stdout | src/test/userLevel.test.ts > Compute User Level > computes level with dual format (V-Scale and Font)
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 10,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.692Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > computes level from ON-WALL sessions with at least MIN_BOULDERS_FOR_LEVEL
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 2,
+  rawLogsFound: 4,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 14,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.697Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > excludes OFF-WALL sessions
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 0,
+  rawLogsFound: 0,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 0,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.699Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > excludes sessions outside 90-day window
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 0,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 0,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.701Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > returns hasData=false when boulder count < MIN_BOULDERS_FOR_LEVEL
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 9,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.702Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > returns hasData=true when boulder count >= MIN_BOULDERS_FOR_LEVEL
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 10,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.704Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > returns hasData=false for no data
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 0,
+  rawLogsFound: 0,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 0,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.705Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > handles missing mappings gracefully
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Excluded log "Unknown" (count: 5) - no mapping found
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 2,
+  unmappedLogs: 1,
+  unmappedGrades: [ 'Unknown' ],
+  totalBoulders: 10,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.707Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > selects top N boulders by difficulty
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 4,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 35,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.710Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > uses all boulders when fewer than TOP_BOULDERS_COUNT exist
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 12,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.712Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > formats grades according to preferred scale
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 15,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.713Z',
+  gradeLookupSize: 51
+}
+[userLevel] Built grade lookup: 51 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 15,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.713Z',
+  gradeLookupSize: 51
+}
+
+stdout | src/test/userLevel.test.ts > Compute User Level > sets missingMappings flag when no mappings provided
+[userLevel] Built grade lookup: 47 total (0 gym mappings, 0 skipped)
+[userLevel] Excluded log "Blue" (count: 15) - no mapping found
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 1,
+  unmappedGrades: [ 'Blue' ],
+  totalBoulders: 0,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.715Z',
+  gradeLookupSize: 47
+}
+
+stdout | src/test/userLevel.test.ts > Font-Only Gym Support > Font-only gyms always produce valid V-scores
+[userLevel] Built grade lookup: 50 total (3 gym mappings, 0 skipped)
+
+stdout | src/test/userLevel.test.ts > Font-Only Gym Support > computes User Level correctly for Font-only gym
+[userLevel] Built grade lookup: 50 total (3 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 10,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.717Z',
+  gradeLookupSize: 50
+}
+
+stdout | src/test/userLevel.test.ts > Color Grade Support > color grades with mapping produce valid User Level
+[userLevel] Built grade lookup: 50 total (3 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 12,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.719Z',
+  gradeLookupSize: 50
+}
+
+stdout | src/test/userLevel.test.ts > Numeric Grade Support > numeric grades with mapping produce valid User Level
+[userLevel] Built grade lookup: 50 total (4 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 10,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.720Z',
+  gradeLookupSize: 50
+}
+
+stdout | src/test/userLevel.test.ts > Missing Mappings Handling > missing mappings do not crash analytics
+[userLevel] Built grade lookup: 48 total (1 gym mappings, 0 skipped)
+[userLevel] Excluded log "Unknown1" (count: 5) - no mapping found
+[userLevel] Excluded log "Unknown2" (count: 5) - no mapping found
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 3,
+  unmappedLogs: 2,
+  unmappedGrades: [ 'Unknown1', 'Unknown2' ],
+  totalBoulders: 10,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.723Z',
+  gradeLookupSize: 48
+}
+[userLevel] Built grade lookup: 48 total (1 gym mappings, 0 skipped)
+[userLevel] Excluded log "Unknown1" (count: 5) - no mapping found
+[userLevel] Excluded log "Unknown2" (count: 5) - no mapping found
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 3,
+  unmappedLogs: 2,
+  unmappedGrades: [ 'Unknown1', 'Unknown2' ],
+  totalBoulders: 10,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.723Z',
+  gradeLookupSize: 48
+}
+
+stdout | src/test/userLevel.test.ts > Missing Mappings Handling > returns graceful result when all boulders are unmappable
+[userLevel] Built grade lookup: 48 total (1 gym mappings, 0 skipped)
+[userLevel] Excluded log "Unknown" (count: 20) - no mapping found
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 1,
+  unmappedLogs: 1,
+  unmappedGrades: [ 'Unknown' ],
+  totalBoulders: 0,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.725Z',
+  gradeLookupSize: 48
+}
+
+stdout | src/test/userLevel.test.ts > Font grades in grade_raw regression fix > computes user level when grade_raw contains Font grades like 6b+
+[userLevel] Built grade lookup: 50 total (3 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 2,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 20,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.726Z',
+  gradeLookupSize: 50
+}
+
+stdout | src/test/userLevel.test.ts > Font grades in grade_raw regression fix > computes user level with mixed Font grades (real-world scenario)
+[userLevel] Built grade lookup: 47 total (0 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 4,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 20,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.728Z',
+  gradeLookupSize: 47
+}
+
+stdout | src/test/userLevel.test.ts > Font grades in grade_raw regression fix > computes user level with V-scale grades in grade_raw
+[userLevel] Built grade lookup: 47 total (0 gym mappings, 0 skipped)
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 2,
+  unmappedLogs: 0,
+  unmappedGrades: [],
+  totalBoulders: 20,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.729Z',
+  gradeLookupSize: 47
+}
+
+stdout | src/test/userLevel.test.ts > Font grades in grade_raw regression fix > provides diagnostic info when insufficient boulders are mapped
+[userLevel] Built grade lookup: 47 total (0 gym mappings, 0 skipped)
+[userLevel] Excluded log "UnknownGrade" (count: 20) - no mapping found
+[userLevel] Computation summary: {
+  onWallSessions: 1,
+  rawLogsFound: 2,
+  unmappedLogs: 1,
+  unmappedGrades: [ 'UnknownGrade' ],
+  totalBoulders: 5,
+  windowDays: 90,
+  cutoffDate: '2026-07-27T16:10:53.730Z',
+  gradeLookupSize: 47
+}
+
+ ✓ src/test/userLevel.test.ts (61 tests) 90ms
+ ✓ src/test/offlineIndicator.test.tsx (2 tests) 377ms
+ ✓ src/test/offlineSync.test.tsx (12 tests) 296ms
+ ✓ src/test/analytics.test.ts (15 tests) 10ms
+ ✓ src/test/strengthCompletion.test.tsx (5 tests) 1681ms
+   ✓ StrengthSession completion through the UI > submits completed status, end time, protocol and sets, then navigates after confirmation  525ms
+   ✓ StrengthSession completion through the UI > keeps the form and recovery data after database error and permits retry  382ms
+   ✓ StrengthSession completion through the UI > keeps the form and recovery data after no confirmation and permits retry  318ms
+   ✓ StrengthSession completion through the UI > does not clear recovery data or navigate before the server confirms success  313ms
+ ✓ src/test/mappingHealth.test.ts (10 tests) 12ms
+ ✓ src/test/templates.test.ts (17 tests) 10ms
+ ✓ src/test/productionHardening.test.ts (7 tests) 11ms
+ ✓ src/test/toast.test.ts (5 tests) 9ms
+ ✓ src/test/example.test.ts (1 test) 3ms
+ ✓ src/test/painInsights.test.ts (17 tests) 8ms
+ ✓ src/test/pwa.test.ts (5 tests) 20566ms
+
+ Test Files  22 passed (22)
+      Tests  292 passed (292)
+   Start at  17:10:43
+   Duration  23.67s (transform 1.26s, setup 17.39s, collect 10.06s, tests 27.27s, environment 112.06s, prepare 23.03s)
+
+JSON report written to C:/Users/barte/Desktop/Wszystko/Repos/Repo Inzynierka/boulderlog/docs/testing/history/2026-10-25T16-10-41-635Z_7cf8db65/vitest-results.json

@@ -1,0 +1,24 @@
+stderr | src/test/pwa.test.ts
+Browserslist: browsers data (caniuse-lite) is 16 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+stderr | src/test/strengthCompletion.test.tsx > StrengthSession completion through the UI > submits completed status, end time, protocol and sets, then navigates after confirmation
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/test/strengthCompletion.test.tsx > StrengthSession completion through the UI > submits completed status, end time, protocol and sets, then navigates after confirmation
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
+stderr | src/test/strengthCompletion.test.tsx > StrengthSession completion through the UI > keeps the form and recovery data after database error and permits retry
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
+stderr | src/test/strengthCompletion.test.tsx > StrengthSession completion through the UI > keeps the form and recovery data after no confirmation and permits retry
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
+stderr | src/test/strengthCompletion.test.tsx > StrengthSession completion through the UI > does not clear recovery data or navigate before the server confirms success
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
+stderr | src/test/strengthCompletion.test.tsx > StrengthSession completion through the UI > rejects an empty session without calling the server
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
