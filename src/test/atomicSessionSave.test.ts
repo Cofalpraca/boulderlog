@@ -38,6 +38,7 @@ beforeAll(async () => {
   const lifecycle = readFileSync(new URL('../../supabase/migrations/20260120102128_9c575df5-bf54-4da0-8968-90b91001e0d5.sql', import.meta.url), 'utf8');
   await db.exec(lifecycle.slice(lifecycle.indexOf('CREATE OR REPLACE FUNCTION public.validate_session_lifecycle()'), lifecycle.indexOf('-- Part A2')));
   await db.exec(readFileSync(new URL('../../supabase/migrations/20261025120000_atomic_session_save.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../../supabase/migrations/20261025143000_refresh_session_rpc_schema_cache.sql', import.meta.url), 'utf8'));
 }, 30000);
 beforeEach(async () => {
   await db.exec(`RESET ROLE; TRUNCATE sessions, gyms, exercises, protocols CASCADE;
